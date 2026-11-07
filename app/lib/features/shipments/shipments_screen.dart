@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/widgets/app_card.dart';
 
 class ShipmentsScreen extends StatelessWidget {
   const ShipmentsScreen({super.key});
@@ -14,72 +15,50 @@ class ShipmentsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SafeArea(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: ListView(
+        padding: const EdgeInsets.fromLTRB(20, 18, 20, 24),
         children: [
-          const Padding(
-            padding: EdgeInsets.fromLTRB(16, 18, 16, 8),
-            child: Text('Shipments',
-                style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.navy)),
-          ),
-          Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
-              itemCount: _data.length,
-              itemBuilder: (_, i) {
-                final s = _data[i];
-                final profit = s[5] as String;
-                final ok = s[6] as bool;
-                return Container(
-                  margin: const EdgeInsets.only(bottom: 12),
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: AppColors.border),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(s[0] as String,
-                          style: const TextStyle(
-                              fontWeight: FontWeight.w800,
-                              color: AppColors.navy)),
-                      Text(s[1] as String,
-                          style: const TextStyle(
-                              color: AppColors.muted, fontSize: 12)),
-                      const SizedBox(height: 6),
-                      Row(
-                        children: [
-                          const Icon(Icons.place_outlined,
-                              size: 14, color: AppColors.muted),
-                          const SizedBox(width: 4),
-                          Expanded(
+          Text('Shipments', style: numStyle(size: 22)),
+          const SizedBox(height: 14),
+          ..._data.map((s) {
+            final ok = s[6] as bool;
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: AppCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(s[0] as String, style: numStyle(size: 15)),
+                    Text(s[1] as String,
+                        style: const TextStyle(
+                            color: AppColors.muted, fontSize: 12)),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        const Icon(Icons.place_outlined,
+                            size: 14, color: AppColors.muted),
+                        const SizedBox(width: 4),
+                        Expanded(
                             child: Text(s[2] as String,
                                 style: const TextStyle(
-                                    fontSize: 12.5, color: AppColors.navy)),
-                          ),
-                        ],
-                      ),
-                      const Divider(height: 18, color: AppColors.border),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          _kv('TYPE', s[3] as String, AppColors.navy),
-                          _kv('REVENUE', s[4] as String, AppColors.navy),
-                          _kv('PROFIT', profit,
-                              ok ? AppColors.green : AppColors.loss),
-                        ],
-                      ),
-                    ],
-                  ),
-                );
-              },
-            ),
-          ),
+                                    fontSize: 12.5, color: AppColors.ink))),
+                      ],
+                    ),
+                    const Divider(height: 20, color: AppColors.line),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        _kv('TYPE', s[3] as String, AppColors.ink),
+                        _kv('REVENUE', s[4] as String, AppColors.ink),
+                        _kv('PROFIT', s[5] as String,
+                            ok ? AppColors.green : AppColors.loss),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }),
         ],
       ),
     );
@@ -88,12 +67,7 @@ class ShipmentsScreen extends StatelessWidget {
   Widget _kv(String k, String v, Color c) => Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(k,
-              style: const TextStyle(
-                  color: AppColors.muted,
-                  fontSize: 10,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 0.5)),
+          Text(k, style: labelStyle().copyWith(fontSize: 10)),
           const SizedBox(height: 2),
           Text(v,
               style: TextStyle(

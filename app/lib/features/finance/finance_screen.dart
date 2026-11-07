@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/widgets/app_card.dart';
 
 class FinanceScreen extends StatelessWidget {
   const FinanceScreen({super.key});
@@ -15,114 +16,90 @@ class FinanceScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return SafeArea(
       child: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 18, 16, 24),
+        padding: const EdgeInsets.fromLTRB(20, 18, 20, 24),
         children: [
-          const Text('Finance',
-              style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.navy)),
+          Text('Finance', style: numStyle(size: 22)),
           const SizedBox(height: 14),
-          Row(
+          const Row(
             children: [
-              _tile('REVENUE', 'Rp 3,2 M', AppColors.navy),
-              const SizedBox(width: 10),
-              _tile('COST', 'Rp 2,4 M', AppColors.loss),
-              const SizedBox(width: 10),
-              _tile('PROFIT', 'Rp 789 jt', AppColors.green),
+              Expanded(child: StatTile(label: 'REVENUE', value: 'Rp 3,2 M')),
+              SizedBox(width: 12),
+              Expanded(
+                  child: StatTile(
+                      label: 'COST',
+                      value: 'Rp 2,4 M',
+                      valueColor: AppColors.loss)),
+            ],
+          ),
+          const SizedBox(height: 12),
+          const Row(
+            children: [
+              Expanded(
+                  child: StatTile(
+                      label: 'PROFIT',
+                      value: 'Rp 789 jt',
+                      valueColor: AppColors.green)),
+              SizedBox(width: 12),
+              Expanded(child: StatTile(label: 'MARGIN', value: '24,6%')),
             ],
           ),
           const SizedBox(height: 18),
-          const Text('Invoice terbaru',
-              style: TextStyle(
-                  fontWeight: FontWeight.w700, color: AppColors.navy)),
-          const SizedBox(height: 8),
+          Text('Invoice terbaru', style: numStyle(size: 15)),
+          const SizedBox(height: 10),
           ..._inv.map((e) {
             final paid = e[4] as bool;
-            return Container(
-              margin: const EdgeInsets.only(bottom: 10),
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: AppColors.border),
-              ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: AppCard(
+                shadow: AppShadows.soft,
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(e[0] as String, style: numStyle(size: 14)),
+                          Text(e[1] as String,
+                              style: const TextStyle(
+                                  color: AppColors.muted, fontSize: 12)),
+                        ],
+                      ),
+                    ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
-                        Text(e[0] as String,
-                            style: const TextStyle(
-                                fontWeight: FontWeight.w800,
-                                color: AppColors.navy)),
-                        Text(e[1] as String,
-                            style: const TextStyle(
-                                color: AppColors.muted, fontSize: 12)),
+                        Text(e[2] as String,
+                            style: numStyle(size: 14, color: AppColors.green)),
+                        const SizedBox(height: 4),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: paid
+                                ? AppColors.greenSoft
+                                : AppColors.lossSoft,
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(e[3] as String,
+                              style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w700,
+                                  color: paid
+                                      ? AppColors.greenInk
+                                      : AppColors.loss)),
+                        ),
                       ],
                     ),
-                  ),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(e[2] as String,
-                          style: const TextStyle(
-                              fontWeight: FontWeight.w800,
-                              color: AppColors.green)),
-                      const SizedBox(height: 4),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: paid
-                              ? AppColors.green.withValues(alpha: 0.12)
-                              : AppColors.loss.withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Text(e[3] as String,
-                            style: TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.w700,
-                                color: paid ? AppColors.green : AppColors.loss)),
-                      ),
-                    ],
-                  ),
-                ],
+                  ],
+                ),
               ),
             );
           }),
-          const SizedBox(height: 6),
+          const SizedBox(height: 4),
           const Text('Angka contoh — belum terhubung data.',
               style: TextStyle(color: AppColors.muted, fontSize: 12)),
         ],
       ),
     );
   }
-
-  Widget _tile(String label, String value, Color color) => Expanded(
-        child: Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: AppColors.border),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(label,
-                  style: const TextStyle(
-                      color: AppColors.muted,
-                      fontSize: 10,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 0.5)),
-              const SizedBox(height: 4),
-              Text(value,
-                  style: TextStyle(
-                      fontWeight: FontWeight.w800, color: color, fontSize: 15)),
-            ],
-          ),
-        ),
-      );
 }

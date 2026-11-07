@@ -13,40 +13,32 @@ class InsightScreen extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              width: 72,
-              height: 72,
-              decoration: BoxDecoration(
-                color: AppColors.navy.withValues(alpha: 0.08),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: const Icon(Icons.insights, color: AppColors.navy, size: 34),
+              width: 76,
+              height: 76,
+              decoration: const BoxDecoration(
+                  color: AppColors.greenSoft, shape: BoxShape.circle),
+              child: const Icon(Icons.insights_rounded,
+                  color: AppColors.greenInk, size: 34),
             ),
             const SizedBox(height: 18),
-            const Text('Insight',
-                style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.navy)),
+            Text('Insight', style: numStyle(size: 20)),
             const SizedBox(height: 8),
             const Text(
-              'Analisis keuangan & operasional otomatis '
-              '(tren, penyebab, vendor termahal, prediksi) '
-              'dihitung langsung dari data perusahaan.',
+              'Analisis keuangan & operasional otomatis (tren, penyebab, '
+              'vendor termahal, prediksi) langsung dari data perusahaan.',
               textAlign: TextAlign.center,
               style: TextStyle(color: AppColors.muted, height: 1.5),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 12),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                color: AppColors.green.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(999),
-              ),
-              child: const Text('Segera hadir',
-                  style: TextStyle(
-                      color: AppColors.green,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 12)),
+                  color: AppColors.greenSoft,
+                  borderRadius: BorderRadius.circular(AppRadii.pill)),
+              child: Text('Segera hadir',
+                  style: labelStyle().copyWith(
+                      color: AppColors.greenInk, letterSpacing: 0)),
             ),
           ],
         ),
