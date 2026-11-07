@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/widgets/app_bottom_nav.dart';
 import '../dashboard/dashboard_screen.dart';
 import '../shipments/shipments_screen.dart';
 import '../finance/finance_screen.dart';
@@ -25,31 +26,12 @@ class _HomeShellState extends State<HomeShell> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: IndexedStack(index: _index, children: _screens),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _index,
-        onDestinationSelected: (v) => setState(() => _index = v),
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.dashboard_outlined),
-            selectedIcon: Icon(Icons.dashboard),
-            label: 'Dashboard',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.local_shipping_outlined),
-            selectedIcon: Icon(Icons.local_shipping),
-            label: 'Shipments',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.account_balance_wallet_outlined),
-            selectedIcon: Icon(Icons.account_balance_wallet),
-            label: 'Finance',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.insights_outlined),
-            selectedIcon: Icon(Icons.insights),
-            label: 'Insight',
-          ),
-        ],
+      bottomNavigationBar: AppBottomNav(
+        index: _index,
+        onSelect: (v) => setState(() => _index = v),
+        onFab: () => ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Tambah data — segera')),
+        ),
       ),
     );
   }

@@ -122,6 +122,7 @@ class HighlightCard extends StatelessWidget {
 class StatTile extends StatelessWidget {
   final String label;
   final String value;
+  final String? unit;
   final Color valueColor;
   final IconData? icon;
 
@@ -129,6 +130,7 @@ class StatTile extends StatelessWidget {
     super.key,
     required this.label,
     required this.value,
+    this.unit,
     this.valueColor = AppColors.ink,
     this.icon,
   });
@@ -136,6 +138,7 @@ class StatTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AppCard(
+      padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -144,16 +147,35 @@ class StatTile extends StatelessWidget {
               Expanded(child: Text(label, style: labelStyle())),
               if (icon != null)
                 Container(
-                  width: 28,
-                  height: 28,
+                  width: 32,
+                  height: 32,
                   decoration: const BoxDecoration(
                       color: AppColors.greenSoft, shape: BoxShape.circle),
-                  child: Icon(icon, size: 15, color: AppColors.greenInk),
+                  child: Icon(icon, size: 17, color: AppColors.greenInk),
                 ),
             ],
           ),
-          const SizedBox(height: 10),
-          Text(value, style: numStyle(size: 21, color: valueColor)),
+          const SizedBox(height: 12),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
+            children: [
+              Flexible(
+                child: Text(value,
+                    style: numStyle(size: 22, color: valueColor),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis),
+              ),
+              if (unit != null) ...[
+                const SizedBox(width: 4),
+                Text(unit!,
+                    style: const TextStyle(
+                        color: AppColors.muted,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600)),
+              ],
+            ],
+          ),
         ],
       ),
     );

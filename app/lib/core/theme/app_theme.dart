@@ -31,8 +31,8 @@ class AppColors {
 }
 
 class AppRadii {
-  static const card = 20.0;
-  static const tile = 18.0;
+  static const card = 24.0;
+  static const tile = 20.0;
   static const input = 14.0;
   static const pill = 999.0;
 }
@@ -40,18 +40,18 @@ class AppRadii {
 class AppShadows {
   static const card = [
     BoxShadow(
-      color: Color(0x1416365C),
-      blurRadius: 24,
-      offset: Offset(0, 10),
-      spreadRadius: -6,
+      color: Color(0x12141F33),
+      blurRadius: 28,
+      offset: Offset(0, 14),
+      spreadRadius: -12,
     ),
   ];
   static const soft = [
     BoxShadow(
-      color: Color(0x0F16365C),
-      blurRadius: 16,
-      offset: Offset(0, 6),
-      spreadRadius: -4,
+      color: Color(0x0D141F33),
+      blurRadius: 18,
+      offset: Offset(0, 8),
+      spreadRadius: -8,
     ),
   ];
 }
