@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+import 'package:iconsax_plus/iconsax_plus.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/app_card.dart';
 
@@ -20,7 +22,8 @@ class DashboardScreen extends StatelessWidget {
                 decoration: const BoxDecoration(
                     color: AppColors.ink, shape: BoxShape.circle),
                 alignment: Alignment.center,
-                child: Text('O', style: numStyle(size: 18, color: Colors.white)),
+                child:
+                    Text('O', style: numStyle(size: 18, color: Colors.white)),
               ),
               const SizedBox(width: 12),
               const Expanded(
@@ -44,7 +47,7 @@ class DashboardScreen extends StatelessWidget {
                     color: AppColors.surface,
                     shape: BoxShape.circle,
                     boxShadow: AppShadows.soft),
-                child: const Icon(Icons.notifications_none_rounded,
+                child: const Icon(IconsaxPlusBold.notification,
                     color: AppColors.ink, size: 20),
               ),
             ],
@@ -58,16 +61,17 @@ class DashboardScreen extends StatelessWidget {
             sub: 'Margin 24,6% · naik dari bulan lalu',
             progress: 0.62,
             progressLabel: '+12%',
-          ),
+          ).animate().fadeIn(duration: 380.ms).slideY(
+              begin: 0.10, end: 0, curve: Curves.easeOutCubic),
           const SizedBox(height: 16),
-          const Row(
-            children: [
+          Row(
+            children: const [
               Expanded(
                   child: StatTile(
                       label: 'REVENUE',
                       value: 'Rp 3,2',
                       unit: 'M',
-                      icon: Icons.trending_up_rounded)),
+                      icon: IconsaxPlusBold.trend_up)),
               SizedBox(width: 14),
               Expanded(
                   child: StatTile(
@@ -75,27 +79,29 @@ class DashboardScreen extends StatelessWidget {
                       value: 'Rp 2,4',
                       unit: 'M',
                       valueColor: AppColors.loss,
-                      icon: Icons.trending_down_rounded)),
+                      icon: IconsaxPlusBold.trend_down)),
             ],
-          ),
+          ).animate(delay: 90.ms).fadeIn(duration: 380.ms).slideY(
+              begin: 0.10, end: 0, curve: Curves.easeOutCubic),
           const SizedBox(height: 14),
-          const Row(
-            children: [
+          Row(
+            children: const [
               Expanded(
                   child: StatTile(
                       label: 'PIUTANG',
                       value: 'Rp 636',
                       unit: 'jt',
-                      icon: Icons.south_west_rounded)),
+                      icon: IconsaxPlusBold.receive_square)),
               SizedBox(width: 14),
               Expanded(
                   child: StatTile(
                       label: 'HUTANG',
                       value: 'Rp 1,8',
                       unit: 'M',
-                      icon: Icons.north_east_rounded)),
+                      icon: IconsaxPlusBold.money_send)),
             ],
-          ),
+          ).animate(delay: 150.ms).fadeIn(duration: 380.ms).slideY(
+              begin: 0.10, end: 0, curve: Curves.easeOutCubic),
           const SizedBox(height: 16),
           AppCard(
             child: Column(
@@ -113,7 +119,8 @@ class DashboardScreen extends StatelessWidget {
                 const _MiniBars(),
               ],
             ),
-          ),
+          ).animate(delay: 210.ms).fadeIn(duration: 380.ms).slideY(
+              begin: 0.10, end: 0, curve: Curves.easeOutCubic),
           const SizedBox(height: 14),
           const Text('Angka contoh, belum terhubung data.',
               style: TextStyle(color: AppColors.muted, fontSize: 12)),
@@ -163,7 +170,7 @@ class _PeriodChipsState extends State<_PeriodChips> {
   }
 }
 
-/// Bar chart ringan: label nilai di atas, bulan terakhir di-highlight.
+/// Bar chart: label nilai + batang tumbuh beranimasi; bulan terakhir hijau.
 class _MiniBars extends StatelessWidget {
   const _MiniBars();
   static const _h = [0.5, 0.35, 0.82, 0.45, 0.6, 0.95];
@@ -195,7 +202,14 @@ class _MiniBars extends StatelessWidget {
                     borderRadius:
                         const BorderRadius.vertical(top: Radius.circular(8)),
                   ),
-                ),
+                ).animate().scaleY(
+                      begin: 0,
+                      end: 1,
+                      alignment: Alignment.bottomCenter,
+                      duration: 550.ms,
+                      delay: (250 + i * 70).ms,
+                      curve: Curves.easeOutCubic,
+                    ),
                 const SizedBox(height: 8),
                 Text(_months[i], style: labelStyle().copyWith(fontSize: 10)),
               ],

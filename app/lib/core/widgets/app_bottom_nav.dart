@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:iconsax_plus/iconsax_plus.dart';
 import '../theme/app_theme.dart';
 
 /// Bottom nav mengambang (pill) + FAB hijau di tengah.
@@ -30,11 +31,11 @@ class AppBottomNav extends StatelessWidget {
           ),
           child: Row(
             children: [
-              _item(0, Icons.grid_view_rounded, 'Dashboard'),
-              _item(1, Icons.local_shipping_rounded, 'Shipments'),
+              _item(0, IconsaxPlusBold.element_3, 'Dashboard'),
+              _item(1, IconsaxPlusBold.truck, 'Shipments'),
               _FabButton(onTap: onFab),
-              _item(2, Icons.account_balance_wallet_rounded, 'Finance'),
-              _item(3, Icons.auto_awesome_rounded, 'Insight'),
+              _item(2, IconsaxPlusBold.empty_wallet, 'Finance'),
+              _item(3, IconsaxPlusBold.magic_star, 'Insight'),
             ],
           ),
         ),
@@ -93,7 +94,8 @@ class _FabButton extends StatelessWidget {
                       offset: const Offset(0, 6)),
                 ],
               ),
-              child: const Icon(Icons.add_rounded, color: Colors.white, size: 28),
+              child: const Icon(IconsaxPlusBold.add,
+                  color: Colors.white, size: 26),
             ),
           ),
         ),

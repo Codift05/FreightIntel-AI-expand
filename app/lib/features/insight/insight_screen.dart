@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:iconsax_plus/iconsax_plus.dart';
 import '../../core/theme/app_theme.dart';
 
 class InsightScreen extends StatelessWidget {
@@ -17,7 +18,7 @@ class InsightScreen extends StatelessWidget {
               height: 76,
               decoration: const BoxDecoration(
                   color: AppColors.greenSoft, shape: BoxShape.circle),
-              child: const Icon(Icons.insights_rounded,
+              child: const Icon(IconsaxPlusBold.chart_square,
                   color: AppColors.greenInk, size: 34),
             ),
             const SizedBox(height: 18),
