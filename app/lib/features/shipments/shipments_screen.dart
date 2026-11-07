@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:iconsax_plus/iconsax_plus.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/app_card.dart';
 
@@ -22,20 +23,46 @@ class ShipmentsScreen extends StatelessWidget {
           const SizedBox(height: 14),
           ..._data.map((s) {
             final ok = s[6] as bool;
+            final air = s[3] == 'Air Freight';
             return Padding(
               padding: const EdgeInsets.only(bottom: 12),
               child: AppCard(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(s[0] as String, style: numStyle(size: 15)),
-                    Text(s[1] as String,
-                        style: const TextStyle(
-                            color: AppColors.muted, fontSize: 12)),
-                    const SizedBox(height: 8),
                     Row(
                       children: [
-                        const Icon(Icons.place_outlined,
+                        Container(
+                          width: 40,
+                          height: 40,
+                          margin: const EdgeInsets.only(right: 12),
+                          decoration: const BoxDecoration(
+                              color: AppColors.greenSoft,
+                              shape: BoxShape.circle),
+                          child: Icon(
+                              air
+                                  ? IconsaxPlusBold.airplane
+                                  : IconsaxPlusBold.truck,
+                              size: 19,
+                              color: AppColors.greenInk),
+                        ),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(s[0] as String, style: numStyle(size: 15)),
+                              Text(s[1] as String,
+                                  style: const TextStyle(
+                                      color: AppColors.muted, fontSize: 12)),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    Row(
+                      children: [
+                        const Icon(IconsaxPlusBold.routing,
                             size: 14, color: AppColors.muted),
                         const SizedBox(width: 4),
                         Expanded(

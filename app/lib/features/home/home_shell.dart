@@ -6,14 +6,15 @@ import '../finance/finance_screen.dart';
 import '../insight/insight_screen.dart';
 
 class HomeShell extends StatefulWidget {
-  const HomeShell({super.key});
+  final int initialIndex;
+  const HomeShell({super.key, this.initialIndex = 0});
 
   @override
   State<HomeShell> createState() => _HomeShellState();
 }
 
 class _HomeShellState extends State<HomeShell> {
-  int _index = 0;
+  late int _index = widget.initialIndex;
 
   static const _screens = [
     DashboardScreen(),

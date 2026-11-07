@@ -62,7 +62,7 @@ TextStyle numStyle({
   FontWeight weight = FontWeight.w800,
   Color? color,
 }) =>
-    GoogleFonts.plusJakartaSans(
+    GoogleFonts.onest(
       fontSize: size,
       fontWeight: weight,
       color: color ?? AppColors.ink,
@@ -71,7 +71,7 @@ TextStyle numStyle({
     );
 
 /// Label kapital kecil (muted).
-TextStyle labelStyle({Color? color}) => GoogleFonts.plusJakartaSans(
+TextStyle labelStyle({Color? color}) => GoogleFonts.onest(
       fontSize: 11,
       fontWeight: FontWeight.w700,
       letterSpacing: 0.8,
@@ -90,7 +90,7 @@ ThemeData buildAppTheme() {
     error: AppColors.loss,
   );
 
-  final text = GoogleFonts.plusJakartaSansTextTheme().apply(
+  final text = GoogleFonts.onestTextTheme().apply(
     bodyColor: AppColors.inkSoft,
     displayColor: AppColors.ink,
   );

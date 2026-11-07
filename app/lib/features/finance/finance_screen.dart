@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:iconsax_plus/iconsax_plus.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/app_card.dart';
 
@@ -22,13 +23,18 @@ class FinanceScreen extends StatelessWidget {
           const SizedBox(height: 14),
           const Row(
             children: [
-              Expanded(child: StatTile(label: 'REVENUE', value: 'Rp 3,2 M')),
+              Expanded(
+                  child: StatTile(
+                      label: 'REVENUE',
+                      value: 'Rp 3,2 M',
+                      icon: IconsaxPlusBold.trend_up)),
               SizedBox(width: 12),
               Expanded(
                   child: StatTile(
                       label: 'COST',
                       value: 'Rp 2,4 M',
-                      valueColor: AppColors.loss)),
+                      valueColor: AppColors.loss,
+                      icon: IconsaxPlusBold.trend_down)),
             ],
           ),
           const SizedBox(height: 12),
@@ -38,9 +44,14 @@ class FinanceScreen extends StatelessWidget {
                   child: StatTile(
                       label: 'PROFIT',
                       value: 'Rp 789 jt',
-                      valueColor: AppColors.green)),
+                      valueColor: AppColors.green,
+                      icon: IconsaxPlusBold.money)),
               SizedBox(width: 12),
-              Expanded(child: StatTile(label: 'MARGIN', value: '24,6%')),
+              Expanded(
+                  child: StatTile(
+                      label: 'MARGIN',
+                      value: '24,6%',
+                      icon: IconsaxPlusBold.percentage_square)),
             ],
           ),
           const SizedBox(height: 18),
@@ -54,6 +65,19 @@ class FinanceScreen extends StatelessWidget {
                 shadow: AppShadows.soft,
                 child: Row(
                   children: [
+                    Container(
+                      width: 38,
+                      height: 38,
+                      margin: const EdgeInsets.only(right: 12),
+                      decoration: BoxDecoration(
+                        color: paid ? AppColors.greenSoft : AppColors.lossSoft,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(IconsaxPlusBold.receipt_item,
+                          size: 18,
+                          color:
+                              paid ? AppColors.greenInk : AppColors.loss),
+                    ),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,

@@ -51,7 +51,7 @@ class Wordmark extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final base = GoogleFonts.plusJakartaSans(
+    final base = GoogleFonts.onest(
       fontSize: fontSize,
       fontWeight: FontWeight.w800,
       letterSpacing: -0.5,
