@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/widgets/app_card.dart';
 import '../../core/widgets/logo_mark.dart';
 
 class DashboardScreen extends StatelessWidget {
@@ -9,11 +10,11 @@ class DashboardScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return SafeArea(
       child: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 18, 16, 28),
+        padding: const EdgeInsets.fromLTRB(20, 18, 20, 28),
         children: [
           Row(
             children: [
-              const LogoMark(size: 34),
+              const LogoMark(size: 32),
               const SizedBox(width: 10),
               const Expanded(
                 child: Column(
@@ -21,85 +22,75 @@ class DashboardScreen extends StatelessWidget {
                   children: [
                     Text('Halo, Owner',
                         style: TextStyle(
-                            fontSize: 18,
+                            fontSize: 17,
                             fontWeight: FontWeight.w800,
-                            color: AppColors.navy)),
+                            color: AppColors.ink)),
                     Text('Ringkasan keuangan',
                         style: TextStyle(color: AppColors.muted, fontSize: 13)),
                   ],
                 ),
               ),
-              CircleAvatar(
-                backgroundColor: AppColors.navy.withValues(alpha: 0.08),
-                child: const Icon(Icons.notifications_outlined,
-                    color: AppColors.navy, size: 20),
+              Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                    color: AppColors.surface,
+                    shape: BoxShape.circle,
+                    boxShadow: AppShadows.soft),
+                child: const Icon(Icons.notifications_none_rounded,
+                    color: AppColors.ink, size: 20),
               ),
             ],
           ),
           const SizedBox(height: 18),
           const _PeriodChips(),
           const SizedBox(height: 16),
+          const HighlightCard(
+            label: 'PROFIT BULAN INI',
+            value: 'Rp 789 jt',
+            sub: 'Margin 24,6% · naik dari bulan lalu',
+            progress: 0.62,
+            progressLabel: '+12%',
+          ),
+          const SizedBox(height: 14),
           const Row(
             children: [
-              Expanded(
-                  child: _StatCard(
-                      label: 'REVENUE',
-                      value: 'Rp 3,2 M',
-                      color: AppColors.navy)),
+              Expanded(child: StatTile(label: 'REVENUE', value: 'Rp 3,2 M')),
               SizedBox(width: 12),
               Expanded(
-                  child: _StatCard(
-                      label: 'COST', value: 'Rp 2,4 M', color: AppColors.loss)),
+                  child: StatTile(
+                      label: 'COST',
+                      value: 'Rp 2,4 M',
+                      valueColor: AppColors.loss)),
             ],
           ),
           const SizedBox(height: 12),
           const Row(
             children: [
-              Expanded(
-                  child: _StatCard(
-                      label: 'PROFIT',
-                      value: 'Rp 789 jt',
-                      color: AppColors.green)),
+              Expanded(child: StatTile(label: 'PIUTANG', value: 'Rp 636 jt')),
               SizedBox(width: 12),
-              Expanded(
-                  child: _StatCard(
-                      label: 'MARGIN', value: '24,6%', color: AppColors.navy)),
+              Expanded(child: StatTile(label: 'HUTANG', value: 'Rp 1,8 M')),
             ],
           ),
-          const SizedBox(height: 16),
-          _card(
-            child: const Column(
+          const SizedBox(height: 14),
+          AppCard(
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Revenue vs Cost',
-                    style: TextStyle(
-                        fontWeight: FontWeight.w700, color: AppColors.navy)),
-                SizedBox(height: 10),
-                SizedBox(
-                  height: 140,
-                  child: Center(
-                    child: Text('Grafik (placeholder)',
-                        style: TextStyle(color: AppColors.muted)),
-                  ),
+                Row(
+                  children: [
+                    Expanded(
+                        child: Text('Revenue vs Cost',
+                            style: numStyle(size: 15))),
+                    Text('6 BULAN', style: labelStyle()),
+                  ],
                 ),
+                const SizedBox(height: 18),
+                const _MiniBars(),
               ],
             ),
           ),
           const SizedBox(height: 12),
-          const Row(
-            children: [
-              Expanded(
-                  child: _MiniCard(
-                      label: 'Piutang',
-                      value: 'Rp 636 jt',
-                      sub: 'Outstanding')),
-              SizedBox(width: 12),
-              Expanded(
-                  child: _MiniCard(
-                      label: 'Hutang', value: 'Rp 1,8 M', sub: 'Outstanding')),
-            ],
-          ),
-          const SizedBox(height: 14),
           const Text('Angka contoh — belum terhubung data.',
               style: TextStyle(color: AppColors.muted, fontSize: 12)),
         ],
@@ -107,16 +98,6 @@ class DashboardScreen extends StatelessWidget {
     );
   }
 }
-
-Widget _card({required Widget child}) => Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: child,
-    );
 
 class _PeriodChips extends StatefulWidget {
   const _PeriodChips();
@@ -136,17 +117,19 @@ class _PeriodChipsState extends State<_PeriodChips> {
           padding: const EdgeInsets.only(right: 8),
           child: GestureDetector(
             onTap: () => setState(() => _sel = i),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 150),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
               decoration: BoxDecoration(
-                color: active ? AppColors.navy : Colors.white,
-                borderRadius: BorderRadius.circular(999),
-                border: Border.all(color: AppColors.border),
+                color: active ? AppColors.ink : AppColors.surface,
+                borderRadius: BorderRadius.circular(AppRadii.pill),
+                boxShadow: active ? null : AppShadows.soft,
               ),
               child: Text(_items[i],
                   style: TextStyle(
                       color: active ? Colors.white : AppColors.muted,
-                      fontWeight: FontWeight.w600,
+                      fontWeight: FontWeight.w700,
                       fontSize: 13)),
             ),
           ),
@@ -156,57 +139,38 @@ class _PeriodChipsState extends State<_PeriodChips> {
   }
 }
 
-class _StatCard extends StatelessWidget {
-  final String label, value;
-  final Color color;
-  const _StatCard(
-      {required this.label, required this.value, required this.color});
+/// Bar chart ringan (rounded top) — bulan terakhir di-highlight hijau.
+class _MiniBars extends StatelessWidget {
+  const _MiniBars();
+  static const _data = [0.5, 0.35, 0.82, 0.45, 0.6, 0.95];
+  static const _months = ['06', '07', '08', '09', '10', '11'];
   @override
   Widget build(BuildContext context) {
-    return _card(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(label,
-              style: const TextStyle(
-                  color: AppColors.muted,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 1)),
-          const SizedBox(height: 6),
-          Text(value,
-              style: TextStyle(
-                  fontSize: 20, fontWeight: FontWeight.w800, color: color)),
-        ],
-      ),
-    );
-  }
-}
-
-class _MiniCard extends StatelessWidget {
-  final String label, value, sub;
-  const _MiniCard(
-      {required this.label, required this.value, required this.sub});
-  @override
-  Widget build(BuildContext context) {
-    return _card(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(label,
-              style: const TextStyle(
-                  color: AppColors.muted,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600)),
-          const SizedBox(height: 4),
-          Text(value,
-              style: const TextStyle(
-                  fontSize: 17,
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.navy)),
-          Text(sub,
-              style: const TextStyle(color: AppColors.muted, fontSize: 11)),
-        ],
+    return SizedBox(
+      height: 150,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: List.generate(6, (i) {
+          final active = i == 5;
+          return Expanded(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 6),
+                  height: 14 + _data[i] * 104,
+                  decoration: BoxDecoration(
+                    color: active ? AppColors.green : AppColors.greenSoft,
+                    borderRadius:
+                        const BorderRadius.vertical(top: Radius.circular(7)),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(_months[i], style: labelStyle()),
+              ],
+            ),
+          );
+        }),
       ),
     );
   }

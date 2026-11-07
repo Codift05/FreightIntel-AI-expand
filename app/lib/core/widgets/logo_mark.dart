@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../theme/app_theme.dart';
 
 /// Marka logo FreightIntel AI: rute biru tua + satu node hijau di tujuan.
@@ -21,7 +22,7 @@ class _RoutePainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final s = size.width / 256.0;
     final line = Paint()
-      ..color = AppColors.navy
+      ..color = AppColors.ink
       ..style = PaintingStyle.stroke
       ..strokeWidth = 22 * s
       ..strokeCap = StrokeCap.round
@@ -50,17 +51,18 @@ class Wordmark extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final base = GoogleFonts.plusJakartaSans(
+      fontSize: fontSize,
+      fontWeight: FontWeight.w800,
+      letterSpacing: -0.5,
+      color: AppColors.ink,
+    );
     return RichText(
       text: TextSpan(
-        style: TextStyle(
-          fontSize: fontSize,
-          fontWeight: FontWeight.w800,
-          letterSpacing: -0.5,
-          color: AppColors.navy,
-        ),
-        children: const [
-          TextSpan(text: 'FreightIntel'),
-          TextSpan(text: ' AI', style: TextStyle(color: AppColors.green)),
+        style: base,
+        children: [
+          const TextSpan(text: 'FreightIntel'),
+          TextSpan(text: ' AI', style: base.copyWith(color: AppColors.green)),
         ],
       ),
     );
