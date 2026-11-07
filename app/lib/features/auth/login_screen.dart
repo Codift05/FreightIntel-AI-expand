@@ -46,7 +46,7 @@ class LoginScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 14),
                 Center(
-                    child: Text('Demo — tekan Masuk untuk melihat aplikasi.',
+                    child: Text('Demo. Tekan Masuk untuk melihat aplikasi.',
                         style: labelStyle().copyWith(
                             letterSpacing: 0, fontWeight: FontWeight.w500))),
               ],

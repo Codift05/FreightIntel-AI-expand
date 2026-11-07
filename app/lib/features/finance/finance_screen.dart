@@ -96,7 +96,7 @@ class FinanceScreen extends StatelessWidget {
             );
           }),
           const SizedBox(height: 4),
-          const Text('Angka contoh — belum terhubung data.',
+          const Text('Angka contoh, belum terhubung data.',
               style: TextStyle(color: AppColors.muted, fontSize: 12)),
         ],
       ),
