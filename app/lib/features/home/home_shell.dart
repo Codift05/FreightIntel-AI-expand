@@ -30,7 +30,7 @@ class _HomeShellState extends State<HomeShell> {
         index: _index,
         onSelect: (v) => setState(() => _index = v),
         onFab: () => ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Tambah data — segera')),
+          const SnackBar(content: Text('Tambah data: segera')),
         ),
       ),
     );
