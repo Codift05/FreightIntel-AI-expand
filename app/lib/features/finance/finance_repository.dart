@@ -1,8 +1,28 @@
 /// Data layer Finance (demo). Ganti [_data] dengan call API saat backend siap.
+enum FinanceEntryType { revenue, cost }
+
 class Invoice {
   final String no, note, amount, status;
   final bool paid;
-  const Invoice(this.no, this.note, this.amount, this.status, this.paid);
+  final FinanceEntryType? type;
+  final String? counterparty, shipmentNo, category;
+  final DateTime? invoiceDate;
+  final int? dppRupiah, ppnRupiah;
+
+  const Invoice(
+    this.no,
+    this.note,
+    this.amount,
+    this.status,
+    this.paid, {
+    this.type,
+    this.counterparty,
+    this.shipmentNo,
+    this.category,
+    this.invoiceDate,
+    this.dppRupiah,
+    this.ppnRupiah,
+  });
 }
 
 class FinanceRepository {
@@ -12,6 +32,11 @@ class FinanceRepository {
   List<Invoice>? _cache;
   bool get hasCache => _cache != null;
   List<Invoice> get cached => _cache ?? const [];
+
+  void add(Invoice entry) {
+    final existing = _cache ?? _data;
+    _cache = [entry, ...existing];
+  }
 
   Future<List<Invoice>> fetch() async {
     if (_cache != null) return _cache!;

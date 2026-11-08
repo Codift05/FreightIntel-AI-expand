@@ -22,6 +22,9 @@ class _ShipmentsScreenState extends State<ShipmentsScreen> {
   final _repo = ShipmentRepository.instance;
   final _scroll = ScrollController();
   final _items = <Shipment>[];
+  final _searchCtrl = TextEditingController();
+  String _query = '';
+  String? _status; // null = semua
   int _page = 0;
   bool _initialLoading = true;
   bool _loadingMore = false;
@@ -66,7 +69,20 @@ class _ShipmentsScreenState extends State<ShipmentsScreen> {
   @override
   void dispose() {
     _scroll.dispose();
+    _searchCtrl.dispose();
     super.dispose();
+  }
+
+  List<Shipment> get _filtered {
+    final q = _query.trim().toLowerCase();
+    return _items.where((s) {
+      final okQ = q.isEmpty ||
+          s.id.toLowerCase().contains(q) ||
+          s.client.toLowerCase().contains(q) ||
+          s.route.toLowerCase().contains(q);
+      final okS = _status == null || s.status == _status;
+      return okQ && okS;
+    }).toList();
   }
 
   Future<void> _openCreate() async {
@@ -125,20 +141,18 @@ class _ShipmentsScreenState extends State<ShipmentsScreen> {
       ));
     }
 
+    final list = _filtered;
     return _wrap(SafeArea(
       child: ListView.builder(
         controller: _scroll,
         padding: const EdgeInsets.fromLTRB(20, 18, 20, 112),
-        itemCount: _items.length + 2, // judul + footer
+        itemCount: list.length + 2, // header + footer
         itemBuilder: (context, i) {
-          if (i == 0) {
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 14),
-              child: Text('Shipments', style: numStyle(size: 22)),
-            );
+          if (i == 0) return _header();
+          if (i == list.length + 1) {
+            return list.isEmpty ? _noResult() : _Footer(end: _end);
           }
-          if (i == _items.length + 1) return _Footer(end: _end);
-          final s = _items[i - 1];
+          final s = list[i - 1];
           return Padding(
             padding: const EdgeInsets.only(bottom: 12),
             child: _ShipmentCard(
@@ -152,6 +166,77 @@ class _ShipmentsScreenState extends State<ShipmentsScreen> {
       ),
     ));
   }
+
+  Widget _header() => Padding(
+        padding: const EdgeInsets.only(bottom: 14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Shipments', style: numStyle(size: 22)),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _searchCtrl,
+              onChanged: (v) => setState(() => _query = v),
+              decoration: InputDecoration(
+                hintText: 'Cari ID, customer, atau rute',
+                prefixIcon: const Icon(Icons.search, color: AppColors.muted),
+                isDense: true,
+                filled: true,
+                fillColor: AppColors.surface,
+                contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(AppRadii.input),
+                  borderSide: BorderSide.none,
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              height: 34,
+              child: ListView(
+                scrollDirection: Axis.horizontal,
+                children: [
+                  for (final f in ['Semua', ...kShipmentStatuses]) _chip(f),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+
+  Widget _chip(String label) {
+    final sel = (label == 'Semua' && _status == null) || _status == label;
+    return Padding(
+      padding: const EdgeInsets.only(right: 8),
+      child: Pressable(
+        onTap: () =>
+            setState(() => _status = label == 'Semua' ? null : label),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 160),
+          curve: kEaseOut,
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+          decoration: BoxDecoration(
+            color: sel ? AppColors.green : AppColors.surface,
+            borderRadius: BorderRadius.circular(AppRadii.pill),
+            boxShadow: sel ? null : AppShadows.soft,
+          ),
+          child: Text(label,
+              style: TextStyle(
+                  color: sel ? Colors.white : AppColors.muted,
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w700)),
+        ),
+      ),
+    );
+  }
+
+  Widget _noResult() => const Padding(
+        padding: EdgeInsets.only(top: 40),
+        child: Center(
+          child: Text('Tidak ada shipment yang cocok.',
+              style: TextStyle(color: AppColors.muted, fontSize: 13)),
+        ),
+      );
 }
 
 class _Fab extends StatelessWidget {
