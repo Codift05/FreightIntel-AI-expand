@@ -62,25 +62,45 @@ features/
 Built (UI + demo data): Login · Dashboard (FR-DSH partial) · Shipments list
 with filter + search (FR-SHP-03) · Shipment detail + P&L (FR-SHP-04, FR-PRF) ·
 Create shipment (FR-SHP-01 core) · Finance overview + Catat transaksi
-(revenue/cost form, FR-REV-01/FR-CST-01) · Insight placeholder.
+(revenue/cost form, FR-REV-01/FR-CST-01) + Catat pembayaran/cicilan (BR-06,
+tap invoice belum lunas → sheet, status Lunas/Cicilan/Belum) · Notification
+center (FR-NOT-05, bell → list, read/unread) · Insight placeholder.
 
 Not built yet (priority order, see PRD §13):
-1. Record payment / cicilan (BR-06); Notification center (FR-NOT-05).
+1. (Tahap 1 selesai)
 2. Financial Report + export (FR-RPT); Customer + analytics (FR-CAN); Vendor +
    analytics (FR-VAN).
 3. Company/branch settings (FR-CMP); Users & RBAC (FR-USR); Custom fields (FR-CF).
 4. AI Advisor chat (FR-AI); Forecasting (FR-FC); Invoice OCR (FR-OCR).
 
 ## Known debt / audit items
-- Period chips (Harian/Bulanan/Tahunan) don't change data yet.
 - Shipment detail "Edit" button is a stub ("segera").
-- Created shipment is in-memory only (lost on restart).
+- Created shipment / transaction / payment are in-memory only (lost on restart).
 - Create form lacks container & ETD/ETA fields (`shortcut:` comment in file).
-- Language EN/ID mix (Revenue/Cost/PAID). Migrate to ID.
+- Shipment card labels Revenue/Cost/Profit still English (migrate to ID).
 - Profit ring vs "+12%" label not semantically linked.
-- Insight tab icon is a star/sparkle (generic); consider a chart/bulb icon.
+
+## Done (recent audit fixes)
+- Dashboard period chips (Harian/Bulanan/Tahunan) now swap hero + stat values.
+- Insight tab icon changed star → `lamp_charge`. Finance localized to ID.
 
 ## Changelog
+- 2026-11-08 (e) — Transisi pindah layar global: `CupertinoPageTransitionsBuilder`
+  (slide horizontal + swipe-back) untuk semua platform via `pageTransitionsTheme`.
+  Shipments: FAB mengambang diganti tombol "+" di header (kanan judul), empty
+  state dapat tombol "Buat shipment" (lebih clean). Impor `flutter/cupertino.dart`.
+- 2026-11-08 (d) — Dashboard periode: segmented control gaya wondr dengan pill
+  hijau yang **geser mengikuti offset swipe** (sinkron `PageController` via
+  AnimatedBuilder, teks interpolasi warna). Konten per-periode dalam `PageView`
+  (swipe kiri/kanan), halaman di-keep-alive (`AutomaticKeepAliveClientMixin`) +
+  `allowImplicitScrolling` (pre-render tetangga) biar mulus/anti-lag. Header +
+  tab tetap di atas.
+- 2026-11-08 (c) — Catat pembayaran/cicilan (tap invoice → sheet →
+  `FinanceRepository.recordPayment`, status Lunas/Cicilan/Belum; Invoice gains
+  `paidRupiah`, `copyWith`, `totalJt`). Notification center (bell → list,
+  read/unread, unread dot on bell). Dashboard period chips wired (hero + 4 stat
+  values per Harian/Bulanan/Tahunan). Insight tab icon star → lamp_charge.
+  Files: `notifications/notification_screen.dart`.
 - 2026-11-08 (b) — Shipments filter (status chips) + search (id/customer/route).
   Finance "Catat transaksi": choose Pemasukan/Biaya → `RecordTransactionScreen`
   form (customer/vendor, optional shipment link, category, date, DPP + PPN,

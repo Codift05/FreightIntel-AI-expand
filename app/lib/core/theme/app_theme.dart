@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart' show CupertinoPageTransitionsBuilder;
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -105,6 +106,11 @@ ThemeData buildAppTheme() {
     scaffoldBackgroundColor: AppColors.bg,
     textTheme: text,
     splashFactory: InkSparkle.splashFactory,
+    // Transisi pindah layar: slide horizontal + swipe-back (ala iOS), konsisten.
+    pageTransitionsTheme: PageTransitionsTheme(builders: {
+      for (final p in TargetPlatform.values)
+        p: const CupertinoPageTransitionsBuilder(),
+    }),
     appBarTheme: const AppBarTheme(
       backgroundColor: AppColors.bg,
       foregroundColor: AppColors.ink,
