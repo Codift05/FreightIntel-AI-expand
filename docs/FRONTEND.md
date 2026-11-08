@@ -60,12 +60,12 @@ features/
 
 ## Screens: built vs TODO (PRD map)
 Built (UI + demo data): Login · Dashboard (FR-DSH partial) · Shipments list
-(FR-SHP-03) · Shipment detail + P&L (FR-SHP-04, FR-PRF) · Create shipment
-(FR-SHP-01 core) · Finance overview (FR-REV/CST/PRF partial) · Insight placeholder.
+with filter + search (FR-SHP-03) · Shipment detail + P&L (FR-SHP-04, FR-PRF) ·
+Create shipment (FR-SHP-01 core) · Finance overview + Catat transaksi
+(revenue/cost form, FR-REV-01/FR-CST-01) · Insight placeholder.
 
 Not built yet (priority order, see PRD §13):
-1. Add Revenue / Add Cost forms (FR-REV-01, FR-CST-01); Record payment (BR-06);
-   Shipment filter & search (FR-SHP-03); Notification center (FR-NOT-05).
+1. Record payment / cicilan (BR-06); Notification center (FR-NOT-05).
 2. Financial Report + export (FR-RPT); Customer + analytics (FR-CAN); Vendor +
    analytics (FR-VAN).
 3. Company/branch settings (FR-CMP); Users & RBAC (FR-USR); Custom fields (FR-CF).
@@ -81,6 +81,12 @@ Not built yet (priority order, see PRD §13):
 - Insight tab icon is a star/sparkle (generic); consider a chart/bulb icon.
 
 ## Changelog
+- 2026-11-08 (b) — Shipments filter (status chips) + search (id/customer/route).
+  Finance "Catat transaksi": choose Pemasukan/Biaya → `RecordTransactionScreen`
+  form (customer/vendor, optional shipment link, category, date, DPP + PPN,
+  paid toggle) → `FinanceRepository.add`. Finance localized to ID
+  (Pendapatan/Biaya/Laba, Lunas/Belum lunas). `finance_repository` extended with
+  typed `Invoice` fields + `FinanceEntryType`. Files: `record_transaction_screen.dart`.
 - 2026-11-08 — Shipment detail + P&L + status timeline; tappable cards; status
   chips on list; Create Shipment form + FAB. Illustration system wired (login
   hero, avatar, mode thumbnails, insight hero, empty states, dashboard pattern).
