@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/illustrations.dart';
 import '../../core/widgets/logo_mark.dart';
 import '../home/home_shell.dart';
 
@@ -18,8 +19,11 @@ class LoginScreen extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const Center(child: LogoMark(size: 76)),
-                const SizedBox(height: 18),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(AppRadii.card),
+                  child: Image.asset(Illus.loginHero, fit: BoxFit.cover),
+                ),
+                const SizedBox(height: 22),
                 const Center(child: Wordmark(fontSize: 28)),
                 const SizedBox(height: 4),
                 Center(

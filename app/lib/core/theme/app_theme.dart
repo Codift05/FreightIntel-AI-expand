@@ -12,7 +12,7 @@ class AppColors {
   // Teks
   static const ink = Color(0xFF16365C);
   static const inkSoft = Color(0xFF3A4B66);
-  static const muted = Color(0xFF64748B);
+  static const muted = Color(0xFF5C6B7D); // AA: 5.45:1 di white, 5.03:1 di bg
 
   // Aksen (SATU)
   static const green = Color(0xFF17A55B);
@@ -29,6 +29,10 @@ class AppColors {
   static const navy = ink;
   static const border = line;
 }
+
+/// Kurva gerak bersama. Ease-out kuat (punchy) untuk elemen masuk/keluar,
+/// lebih tegas dari Curves.easeOutCubic bawaan. Rujukan: Emil Kowalski.
+const Curve kEaseOut = Cubic(0.22, 1, 0.36, 1);
 
 class AppRadii {
   static const card = 24.0;
@@ -70,11 +74,11 @@ TextStyle numStyle({
       fontFeatures: const [FontFeature.tabularFigures()],
     );
 
-/// Label kapital kecil (muted).
+/// Caption/label (sentence case, bukan eyebrow all-caps). Tenang, mudah dibaca.
 TextStyle labelStyle({Color? color}) => GoogleFonts.onest(
-      fontSize: 11,
-      fontWeight: FontWeight.w700,
-      letterSpacing: 0.8,
+      fontSize: 13,
+      fontWeight: FontWeight.w600,
+      letterSpacing: -0.1,
       color: color ?? AppColors.muted,
     );
 

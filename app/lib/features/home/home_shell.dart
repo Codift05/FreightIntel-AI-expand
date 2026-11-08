@@ -26,13 +26,11 @@ class _HomeShellState extends State<HomeShell> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      extendBody: true, // konten mengalir di belakang nav mengambang
       body: IndexedStack(index: _index, children: _screens),
       bottomNavigationBar: AppBottomNav(
         index: _index,
         onSelect: (v) => setState(() => _index = v),
-        onFab: () => ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Tambah data: segera')),
-        ),
       ),
     );
   }

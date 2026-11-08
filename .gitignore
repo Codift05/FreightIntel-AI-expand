@@ -1,5 +1,10 @@
 # Dokumen internal (PRD, RAB, brand kit, infra) — TIDAK di-push
-docs/
+docs/*
+# kecuali dokumentasi frontend untuk AI lintas-tool
+!docs/FRONTEND.md
+
+# Raw aset generate (sumber mentah, besar) — simpan lokal saja
+/Asset Generate/
 
 # Flutter / Dart
 app/build/
