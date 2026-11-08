@@ -75,6 +75,68 @@ class _FinanceScreenState extends State<FinanceScreen> {
     await _createForType(type);
   }
 
+  Future<void> _openPayment(Invoice e) async {
+    final ctrl = TextEditingController(text: '${e.totalJt - (e.paidRupiah ?? 0)}');
+    final amt = await showModalBottomSheet<int>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.fromLTRB(
+            20, 8, 20, MediaQuery.of(ctx).viewInsets.bottom + 20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Catat pembayaran', style: numStyle(size: 17)),
+            const SizedBox(height: 4),
+            Text('${e.no} · sisa Rp ${e.totalJt - (e.paidRupiah ?? 0)} jt',
+                style: const TextStyle(color: AppColors.muted, fontSize: 13)),
+            const SizedBox(height: 16),
+            TextField(
+              controller: ctrl,
+              autofocus: true,
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(
+                labelText: 'Jumlah bayar (jt)',
+                filled: true,
+                fillColor: AppColors.surfaceAlt,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(AppRadii.input),
+                  borderSide: BorderSide.none,
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton(
+                style: FilledButton.styleFrom(
+                  backgroundColor: AppColors.green,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(AppRadii.pill)),
+                ),
+                onPressed: () =>
+                    Navigator.of(ctx).pop(int.tryParse(ctrl.text.trim()) ?? 0),
+                child: const Text('Simpan',
+                    style:
+                        TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+    ctrl.dispose();
+    if (amt == null || amt <= 0 || !mounted) return;
+    _repo.recordPayment(e.no, amt);
+    setState(() => _inv = _repo.cached);
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Pembayaran dicatat.')),
+    );
+  }
+
   Future<void> _createForType(FinanceEntryType type) async {
     final shipmentRepository = ShipmentRepository.instance;
     final entry = await Navigator.of(context).push<Invoice>(
@@ -190,7 +252,8 @@ class _FinanceScreenState extends State<FinanceScreen> {
             for (final e in rows)
               Padding(
                 padding: const EdgeInsets.only(bottom: 10),
-                child: _InvoiceRow(e),
+                child: _InvoiceRow(e,
+                    onTap: (_loading || e.paid) ? null : () => _openPayment(e)),
               ),
             const SizedBox(height: 4),
             const Text('Angka contoh, belum terhubung data.',
@@ -204,14 +267,22 @@ class _FinanceScreenState extends State<FinanceScreen> {
 
 class _InvoiceRow extends StatelessWidget {
   final Invoice e;
-  const _InvoiceRow(this.e);
+  final VoidCallback? onTap;
+  const _InvoiceRow(this.e, {this.onTap});
 
   @override
   Widget build(BuildContext context) {
     final isCost = e.type == FinanceEntryType.cost;
     final amountColor = isCost ? AppColors.loss : AppColors.green;
-    final status = e.paid ? 'Lunas' : 'Belum lunas';
+    final status = e.paid ? 'Lunas' : (e.partial ? 'Cicilan' : 'Belum lunas');
+    final chipFg = e.paid
+        ? AppColors.greenInk
+        : (e.partial ? AppColors.warning : AppColors.loss);
+    final chipBg = e.paid
+        ? AppColors.greenSoft
+        : (e.partial ? AppColors.warningSoft : AppColors.lossSoft);
     return AppCard(
+      onTap: onTap,
       shadow: AppShadows.soft,
       child: Row(
         children: [
@@ -220,7 +291,7 @@ class _InvoiceRow extends StatelessWidget {
             height: 38,
             margin: const EdgeInsets.only(right: 12),
             decoration: BoxDecoration(
-              color: e.paid ? AppColors.greenSoft : AppColors.lossSoft,
+              color: chipBg,
               shape: BoxShape.circle,
             ),
             child: Icon(IconsaxPlusBold.receipt_item,
@@ -256,14 +327,14 @@ class _InvoiceRow extends StatelessWidget {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 decoration: BoxDecoration(
-                  color: e.paid ? AppColors.greenSoft : AppColors.lossSoft,
+                  color: chipBg,
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(status,
                     style: TextStyle(
                         fontSize: 10,
                         fontWeight: FontWeight.w700,
-                        color: e.paid ? AppColors.greenInk : AppColors.loss)),
+                        color: chipFg)),
               ),
             ],
             ),

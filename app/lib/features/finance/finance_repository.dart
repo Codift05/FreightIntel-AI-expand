@@ -7,7 +7,7 @@ class Invoice {
   final FinanceEntryType? type;
   final String? counterparty, shipmentNo, category;
   final DateTime? invoiceDate;
-  final int? dppRupiah, ppnRupiah;
+  final int? dppRupiah, ppnRupiah, paidRupiah;
 
   const Invoice(
     this.no,
@@ -22,7 +22,25 @@ class Invoice {
     this.invoiceDate,
     this.dppRupiah,
     this.ppnRupiah,
+    this.paidRupiah,
   });
+
+  /// Nilai tagihan dalam juta (dari DPP, atau parse dari string amount).
+  int get totalJt =>
+      dppRupiah ?? int.tryParse(amount.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0;
+  bool get partial => status == 'PARTIAL';
+
+  Invoice copyWith({String? status, bool? paid, int? paidRupiah}) => Invoice(
+        no, note, amount, status ?? this.status, paid ?? this.paid,
+        type: type,
+        counterparty: counterparty,
+        shipmentNo: shipmentNo,
+        category: category,
+        invoiceDate: invoiceDate,
+        dppRupiah: dppRupiah,
+        ppnRupiah: ppnRupiah,
+        paidRupiah: paidRupiah ?? this.paidRupiah,
+      );
 }
 
 class FinanceRepository {
@@ -36,6 +54,23 @@ class FinanceRepository {
   void add(Invoice entry) {
     final existing = _cache ?? _data;
     _cache = [entry, ...existing];
+  }
+
+  /// Catat pembayaran (cicilan) sebesar [addJt] juta untuk invoice [no].
+  /// Status jadi PAID bila lunas, PARTIAL bila sebagian (BR-06).
+  void recordPayment(String no, int addJt) {
+    final list = (_cache ?? _data).toList();
+    final i = list.indexWhere((e) => e.no == no);
+    if (i < 0) return;
+    final inv = list[i];
+    final paidNow = (inv.paidRupiah ?? 0) + addJt;
+    final full = paidNow >= inv.totalJt;
+    list[i] = inv.copyWith(
+      status: full ? 'PAID' : 'PARTIAL',
+      paid: full,
+      paidRupiah: full ? inv.totalJt : paidNow,
+    );
+    _cache = list;
   }
 
   Future<List<Invoice>> fetch() async {

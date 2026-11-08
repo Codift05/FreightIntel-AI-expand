@@ -93,18 +93,6 @@ class _ShipmentsScreenState extends State<ShipmentsScreen> {
     setState(() => _items.insert(0, s));
   }
 
-  // Bungkus konten dengan FAB "+" mengambang di atas bottom nav.
-  Widget _wrap(Widget child) => Stack(
-        children: [
-          child,
-          Positioned(
-            right: 20,
-            bottom: 96,
-            child: _Fab(onTap: _openCreate),
-          ),
-        ],
-      );
-
   // Dummy untuk skeleton (bentuk mengikuti kartu asli).
   static const _ghost = Shipment(
       'FI-0000-0000', 'PT Contoh Nama', 'Kota → Kota', 'Trucking',
@@ -132,17 +120,40 @@ class _ShipmentsScreenState extends State<ShipmentsScreen> {
     }
 
     if (_items.isEmpty && _end) {
-      return _wrap(const SafeArea(
-        child: EmptyState(
-          asset: Illus.emptyShipments,
-          title: 'Belum ada shipment',
-          message: 'Shipment yang kamu buat akan tampil di sini.',
+      return SafeArea(
+        child: Column(
+          children: [
+            const Expanded(
+              child: EmptyState(
+                asset: Illus.emptyShipments,
+                title: 'Belum ada shipment',
+                message: 'Shipment yang kamu buat akan tampil di sini.',
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 112),
+              child: SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: AppColors.green,
+                    padding: const EdgeInsets.symmetric(vertical: 13),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(AppRadii.pill)),
+                  ),
+                  onPressed: _openCreate,
+                  icon: const Icon(IconsaxPlusBold.add),
+                  label: const Text('Buat shipment'),
+                ),
+              ),
+            ),
+          ],
         ),
-      ));
+      );
     }
 
     final list = _filtered;
-    return _wrap(SafeArea(
+    return SafeArea(
       child: ListView.builder(
         controller: _scroll,
         padding: const EdgeInsets.fromLTRB(20, 18, 20, 112),
@@ -164,7 +175,7 @@ class _ShipmentsScreenState extends State<ShipmentsScreen> {
           );
         },
       ),
-    ));
+    );
   }
 
   Widget _header() => Padding(
@@ -172,7 +183,13 @@ class _ShipmentsScreenState extends State<ShipmentsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Shipments', style: numStyle(size: 22)),
+            Row(
+              children: [
+                Expanded(
+                    child: Text('Shipments', style: numStyle(size: 22))),
+                _AddButton(onTap: _openCreate),
+              ],
+            ),
             const SizedBox(height: 12),
             TextField(
               controller: _searchCtrl,
@@ -239,30 +256,21 @@ class _ShipmentsScreenState extends State<ShipmentsScreen> {
       );
 }
 
-class _Fab extends StatelessWidget {
+class _AddButton extends StatelessWidget {
   final VoidCallback onTap;
-  const _Fab({required this.onTap});
+  const _AddButton({required this.onTap});
 
   @override
   Widget build(BuildContext context) {
     return Pressable(
       semanticLabel: 'Buat shipment',
-      scale: 0.9,
       onTap: onTap,
       child: Container(
-        width: 56,
-        height: 56,
-        decoration: BoxDecoration(
-          color: AppColors.green,
-          shape: BoxShape.circle,
-          boxShadow: [
-            BoxShadow(
-                color: AppColors.green.withValues(alpha: 0.40),
-                blurRadius: 16,
-                offset: const Offset(0, 6)),
-          ],
-        ),
-        child: const Icon(IconsaxPlusBold.add, color: Colors.white, size: 28),
+        width: 40,
+        height: 40,
+        decoration: const BoxDecoration(
+            color: AppColors.green, shape: BoxShape.circle),
+        child: const Icon(IconsaxPlusBold.add, color: Colors.white, size: 24),
       ),
     );
   }
