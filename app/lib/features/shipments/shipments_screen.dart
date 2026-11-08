@@ -2,8 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:iconsax_plus/iconsax_plus.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/illustrations.dart';
 import '../../core/widgets/app_card.dart';
+import '../../core/widgets/empty_state.dart';
+import '../../core/widgets/pressable.dart';
 import 'shipment_repository.dart';
+import 'shipment_detail_screen.dart';
+import 'create_shipment_screen.dart';
+import 'status_chip.dart';
 
 class ShipmentsScreen extends StatefulWidget {
   const ShipmentsScreen({super.key});
@@ -63,10 +69,30 @@ class _ShipmentsScreenState extends State<ShipmentsScreen> {
     super.dispose();
   }
 
+  Future<void> _openCreate() async {
+    final s = await Navigator.of(context).push<Shipment>(
+      MaterialPageRoute(builder: (_) => const CreateShipmentScreen()),
+    );
+    if (s == null || !mounted) return;
+    setState(() => _items.insert(0, s));
+  }
+
+  // Bungkus konten dengan FAB "+" mengambang di atas bottom nav.
+  Widget _wrap(Widget child) => Stack(
+        children: [
+          child,
+          Positioned(
+            right: 20,
+            bottom: 96,
+            child: _Fab(onTap: _openCreate),
+          ),
+        ],
+      );
+
   // Dummy untuk skeleton (bentuk mengikuti kartu asli).
   static const _ghost = Shipment(
       'FI-0000-0000', 'PT Contoh Nama', 'Kota → Kota', 'Trucking',
-      'Rp 000 jt', 'Rp 00 jt', true);
+      'Rp 000 jt', 'Rp 00 jt', true, 'Booking');
 
   @override
   Widget build(BuildContext context) {
@@ -74,7 +100,7 @@ class _ShipmentsScreenState extends State<ShipmentsScreen> {
       return SafeArea(
         child: Skeletonizer(
           child: ListView(
-            padding: const EdgeInsets.fromLTRB(20, 18, 20, 24),
+            padding: const EdgeInsets.fromLTRB(20, 18, 20, 112),
             children: [
               Text('Shipments', style: numStyle(size: 22)),
               const SizedBox(height: 14),
@@ -89,10 +115,20 @@ class _ShipmentsScreenState extends State<ShipmentsScreen> {
       );
     }
 
-    return SafeArea(
+    if (_items.isEmpty && _end) {
+      return _wrap(const SafeArea(
+        child: EmptyState(
+          asset: Illus.emptyShipments,
+          title: 'Belum ada shipment',
+          message: 'Shipment yang kamu buat akan tampil di sini.',
+        ),
+      ));
+    }
+
+    return _wrap(SafeArea(
       child: ListView.builder(
         controller: _scroll,
-        padding: const EdgeInsets.fromLTRB(20, 18, 20, 24),
+        padding: const EdgeInsets.fromLTRB(20, 18, 20, 112),
         itemCount: _items.length + 2, // judul + footer
         itemBuilder: (context, i) {
           if (i == 0) {
@@ -102,11 +138,46 @@ class _ShipmentsScreenState extends State<ShipmentsScreen> {
             );
           }
           if (i == _items.length + 1) return _Footer(end: _end);
+          final s = _items[i - 1];
           return Padding(
             padding: const EdgeInsets.only(bottom: 12),
-            child: _ShipmentCard(_items[i - 1]),
+            child: _ShipmentCard(
+              s,
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => ShipmentDetailScreen(s)),
+              ),
+            ),
           );
         },
+      ),
+    ));
+  }
+}
+
+class _Fab extends StatelessWidget {
+  final VoidCallback onTap;
+  const _Fab({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Pressable(
+      semanticLabel: 'Buat shipment',
+      scale: 0.9,
+      onTap: onTap,
+      child: Container(
+        width: 56,
+        height: 56,
+        decoration: BoxDecoration(
+          color: AppColors.green,
+          shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(
+                color: AppColors.green.withValues(alpha: 0.40),
+                blurRadius: 16,
+                offset: const Offset(0, 6)),
+          ],
+        ),
+        child: const Icon(IconsaxPlusBold.add, color: Colors.white, size: 28),
       ),
     );
   }
@@ -137,27 +208,26 @@ class _Footer extends StatelessWidget {
 
 class _ShipmentCard extends StatelessWidget {
   final Shipment s;
-  const _ShipmentCard(this.s);
+  final VoidCallback? onTap;
+  const _ShipmentCard(this.s, {this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    final air = s.type == 'Air Freight';
     return AppCard(
+      onTap: onTap,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
               Container(
-                width: 40,
-                height: 40,
+                width: 52,
+                height: 52,
                 margin: const EdgeInsets.only(right: 12),
+                clipBehavior: Clip.antiAlias,
                 decoration: const BoxDecoration(
                     color: AppColors.greenSoft, shape: BoxShape.circle),
-                child: Icon(
-                    air ? IconsaxPlusBold.airplane : IconsaxPlusBold.truck,
-                    size: 19,
-                    color: AppColors.greenInk),
+                child: Image.asset(Illus.mode(s.type), fit: BoxFit.cover),
               ),
               Expanded(
                 child: Column(
@@ -170,6 +240,7 @@ class _ShipmentCard extends StatelessWidget {
                   ],
                 ),
               ),
+              StatusChip(s.status),
             ],
           ),
           const SizedBox(height: 10),
@@ -188,9 +259,9 @@ class _ShipmentCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _kv('TYPE', s.type, AppColors.ink),
-              _kv('REVENUE', s.revenue, AppColors.ink),
-              _kv('PROFIT', s.profit,
+              _kv('Tipe', s.type, AppColors.ink),
+              _kv('Revenue', s.revenue, AppColors.ink),
+              _kv('Profit', s.profit,
                   s.profitUp ? AppColors.green : AppColors.loss),
             ],
           ),
@@ -202,7 +273,7 @@ class _ShipmentCard extends StatelessWidget {
   Widget _kv(String k, String v, Color c) => Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(k, style: labelStyle().copyWith(fontSize: 10)),
+          Text(k, style: labelStyle().copyWith(fontSize: 12)),
           const SizedBox(height: 2),
           Text(v,
               style: TextStyle(

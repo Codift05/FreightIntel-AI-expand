@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:iconsax_plus/iconsax_plus.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/illustrations.dart';
 import '../../core/widgets/app_card.dart';
+import '../../core/widgets/pressable.dart';
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
@@ -12,18 +14,17 @@ class DashboardScreen extends StatelessWidget {
     return SafeArea(
       bottom: false,
       child: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 112),
         children: [
           Row(
             children: [
               Container(
                 width: 46,
                 height: 46,
+                clipBehavior: Clip.antiAlias,
                 decoration: const BoxDecoration(
-                    color: AppColors.ink, shape: BoxShape.circle),
-                alignment: Alignment.center,
-                child:
-                    Text('O', style: numStyle(size: 18, color: Colors.white)),
+                    color: AppColors.greenSoft, shape: BoxShape.circle),
+                child: Image.asset(Illus.avatarOwner, fit: BoxFit.cover),
               ),
               const SizedBox(width: 12),
               const Expanded(
@@ -40,15 +41,20 @@ class DashboardScreen extends StatelessWidget {
                   ],
                 ),
               ),
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                    color: AppColors.surface,
-                    shape: BoxShape.circle,
-                    boxShadow: AppShadows.soft),
-                child: const Icon(IconsaxPlusBold.notification,
-                    color: AppColors.ink, size: 20),
+              Pressable(
+                semanticLabel: 'Notifikasi',
+                onTap: () {},
+                child: Container(
+                  width: 44,
+                  height: 44,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                      color: AppColors.surface,
+                      shape: BoxShape.circle,
+                      boxShadow: AppShadows.soft),
+                  child: const Icon(IconsaxPlusBold.notification,
+                      color: AppColors.ink, size: 20),
+                ),
               ),
             ],
           ),
@@ -56,52 +62,72 @@ class DashboardScreen extends StatelessWidget {
           const _PeriodChips(),
           const SizedBox(height: 18),
           const HighlightCard(
-            label: 'PROFIT BULAN INI',
+            label: 'Profit bulan ini',
             value: 'Rp 789 jt',
             sub: 'Margin 24,6% · naik dari bulan lalu',
             progress: 0.62,
             progressLabel: '+12%',
           ).animate().fadeIn(duration: 380.ms).slideY(
-              begin: 0.10, end: 0, curve: Curves.easeOutCubic),
+              begin: 0.10, end: 0, curve: kEaseOut),
           const SizedBox(height: 16),
           Row(
             children: const [
               Expanded(
                   child: StatTile(
-                      label: 'REVENUE',
+                      label: 'Revenue',
                       value: 'Rp 3,2',
                       unit: 'M',
-                      icon: IconsaxPlusBold.trend_up)),
+                      icon: IconsaxPlusBold.trend_up,
+                      trend: [2.4, 2.6, 2.5, 2.8, 2.9, 3.0, 3.2],
+                      delta: '8,2%',
+                      deltaUp: true,
+                      deltaGood: true,
+                      sparkColor: AppColors.green)),
               SizedBox(width: 14),
               Expanded(
                   child: StatTile(
-                      label: 'COST',
+                      label: 'Cost',
                       value: 'Rp 2,4',
                       unit: 'M',
                       valueColor: AppColors.loss,
-                      icon: IconsaxPlusBold.trend_down)),
+                      icon: IconsaxPlusBold.trend_down,
+                      trend: [2.1, 2.2, 2.15, 2.3, 2.35, 2.3, 2.4],
+                      delta: '3,1%',
+                      deltaUp: true,
+                      deltaGood: false,
+                      sparkColor: AppColors.loss)),
             ],
           ).animate(delay: 90.ms).fadeIn(duration: 380.ms).slideY(
-              begin: 0.10, end: 0, curve: Curves.easeOutCubic),
+              begin: 0.10, end: 0, curve: kEaseOut),
           const SizedBox(height: 14),
           Row(
             children: const [
               Expanded(
                   child: StatTile(
-                      label: 'PIUTANG',
+                      label: 'Piutang',
                       value: 'Rp 636',
                       unit: 'jt',
-                      icon: IconsaxPlusBold.receive_square)),
+                      icon: IconsaxPlusBold.receive_square,
+                      trend: [720, 700, 690, 672, 658, 645, 636],
+                      delta: '4,0%',
+                      deltaUp: false,
+                      deltaGood: true,
+                      sparkColor: AppColors.green)),
               SizedBox(width: 14),
               Expanded(
                   child: StatTile(
-                      label: 'HUTANG',
+                      label: 'Hutang',
                       value: 'Rp 1,8',
                       unit: 'M',
-                      icon: IconsaxPlusBold.money_send)),
+                      icon: IconsaxPlusBold.money_send,
+                      trend: [2.4, 2.3, 2.2, 2.1, 2.0, 1.9, 1.8],
+                      delta: '6,0%',
+                      deltaUp: false,
+                      deltaGood: true,
+                      sparkColor: AppColors.green)),
             ],
           ).animate(delay: 150.ms).fadeIn(duration: 380.ms).slideY(
-              begin: 0.10, end: 0, curve: Curves.easeOutCubic),
+              begin: 0.10, end: 0, curve: kEaseOut),
           const SizedBox(height: 16),
           AppCard(
             child: Column(
@@ -112,7 +138,7 @@ class DashboardScreen extends StatelessWidget {
                     Expanded(
                         child:
                             Text('Revenue vs Cost', style: numStyle(size: 15))),
-                    Text('6 BULAN', style: labelStyle()),
+                    Text('6 bulan', style: labelStyle()),
                   ],
                 ),
                 const SizedBox(height: 20),
@@ -120,7 +146,7 @@ class DashboardScreen extends StatelessWidget {
               ],
             ),
           ).animate(delay: 210.ms).fadeIn(duration: 380.ms).slideY(
-              begin: 0.10, end: 0, curve: Curves.easeOutCubic),
+              begin: 0.10, end: 0, curve: kEaseOut),
           const SizedBox(height: 14),
           const Text('Angka contoh, belum terhubung data.',
               style: TextStyle(color: AppColors.muted, fontSize: 12)),
@@ -146,7 +172,8 @@ class _PeriodChipsState extends State<_PeriodChips> {
         final active = i == _sel;
         return Padding(
           padding: const EdgeInsets.only(right: 8),
-          child: GestureDetector(
+          child: Pressable(
+            semanticLabel: _items[i],
             onTap: () => setState(() => _sel = i),
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 160),
@@ -190,7 +217,7 @@ class _MiniBars extends StatelessWidget {
               children: [
                 Text(_val[i],
                     style: TextStyle(
-                        fontSize: 10,
+                        fontSize: 11,
                         fontWeight: FontWeight.w700,
                         color: active ? AppColors.greenInk : AppColors.muted)),
                 const SizedBox(height: 6),
@@ -208,10 +235,10 @@ class _MiniBars extends StatelessWidget {
                       alignment: Alignment.bottomCenter,
                       duration: 550.ms,
                       delay: (250 + i * 70).ms,
-                      curve: Curves.easeOutCubic,
+                      curve: kEaseOut,
                     ),
                 const SizedBox(height: 8),
-                Text(_months[i], style: labelStyle().copyWith(fontSize: 10)),
+                Text(_months[i], style: labelStyle().copyWith(fontSize: 11)),
               ],
             ),
           );

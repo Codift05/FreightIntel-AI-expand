@@ -5,11 +5,21 @@
 /// Cache halaman yang sudah dimuat ditahan di memori agar pindah tab tidak
 /// memicu skeleton ulang.
 class Shipment {
-  final String id, client, route, type, revenue, profit;
+  final String id, client, route, type, revenue, profit, status;
   final bool profitUp;
   const Shipment(this.id, this.client, this.route, this.type, this.revenue,
-      this.profit, this.profitUp);
+      this.profit, this.profitUp, this.status);
 }
+
+/// Urutan siklus status shipment (PRD §9.2).
+const kShipmentStatuses = [
+  'Booking',
+  'In Transit',
+  'Arrived',
+  'Customs',
+  'Delivered',
+  'Completed',
+];
 
 class ShipmentRepository {
   ShipmentRepository._();
@@ -42,9 +52,10 @@ class ShipmentRepository {
   ];
   static const _clients = ['PT Garuda Trading', 'PT Astra Export', 'CV Mitra Laut'];
 
+  static const _modes = ['Ocean Freight', 'Air Freight', 'Trucking', 'Handling'];
+
   static final List<Shipment> _all = List.generate(20, (i) {
     final r = _routes[i % _routes.length];
-    final air = i % 3 == 1;
     final up = i % 4 != 2;
     final rev = 80 + (i * 23) % 240;
     final prof = up ? 20 + (i * 11) % 120 : -(30 + (i * 7) % 40);
@@ -52,10 +63,11 @@ class ShipmentRepository {
       'FI-2610-${(1000 + i * 137).toRadixString(16).toUpperCase().padLeft(4, '0')}',
       _clients[i % _clients.length],
       '${r[0]} → ${r[1]}',
-      air ? 'Air Freight' : 'Trucking',
+      _modes[i % _modes.length],
       'Rp $rev jt',
       '${prof < 0 ? '-' : ''}Rp ${prof.abs()} jt',
       up,
+      kShipmentStatuses[i % kShipmentStatuses.length],
     );
   });
 }

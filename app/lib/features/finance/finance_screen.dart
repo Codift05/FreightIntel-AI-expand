@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:iconsax_plus/iconsax_plus.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/illustrations.dart';
 import '../../core/widgets/app_card.dart';
+import '../../core/widgets/empty_state.dart';
 import 'finance_repository.dart';
 
 class FinanceScreen extends StatefulWidget {
@@ -46,12 +48,21 @@ class _FinanceScreenState extends State<FinanceScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (!_loading && _inv.isEmpty) {
+      return const SafeArea(
+        child: EmptyState(
+          asset: Illus.emptyFinance,
+          title: 'Semua sudah lunas',
+          message: 'Belum ada invoice berjalan. Transaksi baru akan muncul di sini.',
+        ),
+      );
+    }
     final rows = _loading ? _ghost : _inv;
     return SafeArea(
       child: Skeletonizer(
         enabled: _loading,
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(20, 18, 20, 24),
+          padding: const EdgeInsets.fromLTRB(20, 18, 20, 112),
           children: [
             Text('Finance', style: numStyle(size: 22)),
             const SizedBox(height: 14),
@@ -59,13 +70,13 @@ class _FinanceScreenState extends State<FinanceScreen> {
               children: [
                 Expanded(
                     child: StatTile(
-                        label: 'REVENUE',
+                        label: 'Revenue',
                         value: 'Rp 3,2 M',
                         icon: IconsaxPlusBold.trend_up)),
                 SizedBox(width: 12),
                 Expanded(
                     child: StatTile(
-                        label: 'COST',
+                        label: 'Cost',
                         value: 'Rp 2,4 M',
                         valueColor: AppColors.loss,
                         icon: IconsaxPlusBold.trend_down)),
@@ -76,14 +87,14 @@ class _FinanceScreenState extends State<FinanceScreen> {
               children: [
                 Expanded(
                     child: StatTile(
-                        label: 'PROFIT',
+                        label: 'Profit',
                         value: 'Rp 789 jt',
                         valueColor: AppColors.green,
                         icon: IconsaxPlusBold.money)),
                 SizedBox(width: 12),
                 Expanded(
                     child: StatTile(
-                        label: 'MARGIN',
+                        label: 'Margin',
                         value: '24,6%',
                         icon: IconsaxPlusBold.percentage_square)),
               ],

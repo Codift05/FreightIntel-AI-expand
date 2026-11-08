@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:iconsax_plus/iconsax_plus.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/illustrations.dart';
 
 class InsightScreen extends StatelessWidget {
   const InsightScreen({super.key});
@@ -13,15 +13,8 @@ class InsightScreen extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Container(
-              width: 76,
-              height: 76,
-              decoration: const BoxDecoration(
-                  color: AppColors.greenSoft, shape: BoxShape.circle),
-              child: const Icon(IconsaxPlusBold.chart_square,
-                  color: AppColors.greenInk, size: 34),
-            ),
-            const SizedBox(height: 18),
+            Image.asset(Illus.insightHero, height: 190, fit: BoxFit.contain),
+            const SizedBox(height: 10),
             Text('Insight', style: numStyle(size: 20)),
             const SizedBox(height: 8),
             const Text(

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
+import '../illustrations.dart';
+import 'sparkline.dart';
 
 /// Kartu dasar: surface, radius 20, shadow lembut, tanpa border.
 class AppCard extends StatelessWidget {
@@ -62,18 +64,28 @@ class HighlightCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return AppCard(
-      color: AppColors.greenSoft,
-      shadow: AppShadows.soft,
-      padding: const EdgeInsets.all(20),
-      child: Row(
+    return Container(
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        color: AppColors.greenSoft,
+        borderRadius: BorderRadius.circular(AppRadii.card),
+        boxShadow: AppShadows.soft,
+      ),
+      child: Stack(
+        children: [
+          Positioned.fill(
+            child: Image.asset(Illus.patternRoutes,
+                fit: BoxFit.cover, alignment: Alignment.centerRight),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(20),
+            child: Row(
         children: [
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(label,
-                    style: labelStyle(color: AppColors.greenInk)),
+                Text(label, style: labelStyle(color: AppColors.inkSoft)),
                 const SizedBox(height: 10),
                 Text(value, style: numStyle(size: 30, color: AppColors.ink)),
                 if (sub != null) ...[
@@ -97,19 +109,27 @@ class HighlightCard extends StatelessWidget {
                 SizedBox(
                   width: 72,
                   height: 72,
-                  child: CircularProgressIndicator(
-                    value: progress,
-                    strokeWidth: 8,
-                    backgroundColor: Colors.white,
-                    valueColor:
-                        const AlwaysStoppedAnimation(AppColors.green),
-                    strokeCap: StrokeCap.round,
+                  child: TweenAnimationBuilder<double>(
+                    tween: Tween(begin: 0, end: progress),
+                    duration: const Duration(milliseconds: 900),
+                    curve: kEaseOut,
+                    builder: (_, value, __) => CircularProgressIndicator(
+                      value: value,
+                      strokeWidth: 8,
+                      backgroundColor: Colors.white,
+                      valueColor:
+                          const AlwaysStoppedAnimation(AppColors.green),
+                      strokeCap: StrokeCap.round,
+                    ),
                   ),
                 ),
                 Text(progressLabel,
                     textAlign: TextAlign.center,
                     style: numStyle(size: 15, color: AppColors.greenInk)),
               ],
+            ),
+          ),
+        ],
             ),
           ),
         ],
@@ -126,6 +146,13 @@ class StatTile extends StatelessWidget {
   final Color valueColor;
   final IconData? icon;
 
+  /// Data tren (opsional). Jika diisi, tampil delta chip + sparkline.
+  final List<double>? trend;
+  final String? delta;
+  final bool deltaUp;
+  final bool deltaGood;
+  final Color? sparkColor;
+
   const StatTile({
     super.key,
     required this.label,
@@ -133,6 +160,11 @@ class StatTile extends StatelessWidget {
     this.unit,
     this.valueColor = AppColors.ink,
     this.icon,
+    this.trend,
+    this.delta,
+    this.deltaUp = true,
+    this.deltaGood = true,
+    this.sparkColor,
   });
 
   @override
@@ -176,6 +208,43 @@ class StatTile extends StatelessWidget {
               ],
             ],
           ),
+          if (trend != null) ...[
+            const SizedBox(height: 12),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                if (delta != null) _deltaChip(),
+                const Spacer(),
+                SizedBox(
+                  width: 68,
+                  height: 30,
+                  child: Sparkline(
+                      data: trend!, color: sparkColor ?? AppColors.green),
+                ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _deltaChip() {
+    final c = deltaGood ? AppColors.greenInk : AppColors.loss;
+    final bg = deltaGood ? AppColors.greenSoft : AppColors.lossSoft;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+      decoration: BoxDecoration(
+          color: bg, borderRadius: BorderRadius.circular(AppRadii.pill)),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(deltaUp ? Icons.arrow_upward_rounded : Icons.arrow_downward_rounded,
+              size: 12, color: c),
+          const SizedBox(width: 2),
+          Text(delta!,
+              style: TextStyle(
+                  color: c, fontSize: 11.5, fontWeight: FontWeight.w700)),
         ],
       ),
     );
