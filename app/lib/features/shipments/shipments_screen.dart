@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:iconsax_plus/iconsax_plus.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/widgets/mode_icon.dart';
 import '../../core/illustrations.dart';
 import '../../core/widgets/app_card.dart';
 import '../../core/widgets/empty_state.dart';
@@ -81,8 +82,20 @@ class _ShipmentsScreenState extends State<ShipmentsScreen> {
           s.client.toLowerCase().contains(q) ||
           s.route.toLowerCase().contains(q);
       final okS = _status == null || s.status == _status;
-      return okQ && okS;
+      return okQ && okS && !s.arsip; // yang diarsipkan disembunyikan
     }).toList();
+  }
+
+  /// Buka detail; saat kembali, ambil versi terbaru dari repo (status/arsip
+  /// bisa berubah di layar Ubah shipment).
+  Future<void> _openDetail(Shipment s) async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => ShipmentDetailScreen(s)),
+    );
+    if (!mounted) return;
+    final fresh = _repo.cached.firstWhere((e) => e.id == s.id, orElse: () => s);
+    final i = _items.indexWhere((e) => e.id == s.id);
+    if (i >= 0) setState(() => _items[i] = fresh);
   }
 
   Future<void> _openCreate() async {
@@ -136,7 +149,8 @@ class _ShipmentsScreenState extends State<ShipmentsScreen> {
                 width: double.infinity,
                 child: FilledButton.icon(
                   style: FilledButton.styleFrom(
-                    backgroundColor: AppColors.green,
+                    backgroundColor: AppColors.lime,
+                    foregroundColor: AppColors.ink,
                     padding: const EdgeInsets.symmetric(vertical: 13),
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(AppRadii.pill)),
@@ -168,9 +182,7 @@ class _ShipmentsScreenState extends State<ShipmentsScreen> {
             padding: const EdgeInsets.only(bottom: 12),
             child: _ShipmentCard(
               s,
-              onTap: () => Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => ShipmentDetailScreen(s)),
-              ),
+              onTap: () => _openDetail(s),
             ),
           );
         },
@@ -196,13 +208,17 @@ class _ShipmentsScreenState extends State<ShipmentsScreen> {
               onChanged: (v) => setState(() => _query = v),
               decoration: InputDecoration(
                 hintText: 'Cari ID, customer, atau rute',
-                prefixIcon: const Icon(Icons.search, color: AppColors.muted),
+                hintStyle:
+                    const TextStyle(color: AppColors.muted, fontSize: 13.5),
+                prefixIcon: const Icon(IconsaxPlusLinear.search_normal_1,
+                    color: AppColors.ink, size: 19),
                 isDense: true,
                 filled: true,
                 fillColor: AppColors.surface,
-                contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                contentPadding:
+                    const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(AppRadii.input),
+                  borderRadius: BorderRadius.circular(AppRadii.pill),
                   borderSide: BorderSide.none,
                 ),
               ),
@@ -233,7 +249,7 @@ class _ShipmentsScreenState extends State<ShipmentsScreen> {
           curve: kEaseOut,
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
           decoration: BoxDecoration(
-            color: sel ? AppColors.green : AppColors.surface,
+            color: sel ? AppColors.ink : AppColors.surface,
             borderRadius: BorderRadius.circular(AppRadii.pill),
             boxShadow: sel ? null : AppShadows.soft,
           ),
@@ -269,8 +285,8 @@ class _AddButton extends StatelessWidget {
         width: 40,
         height: 40,
         decoration: const BoxDecoration(
-            color: AppColors.green, shape: BoxShape.circle),
-        child: const Icon(IconsaxPlusBold.add, color: Colors.white, size: 24),
+            color: AppColors.lime, shape: BoxShape.circle),
+        child: const Icon(IconsaxPlusBold.add, color: AppColors.ink, size: 24),
       ),
     );
   }
@@ -292,7 +308,7 @@ class _Footer extends StatelessWidget {
                 width: 22,
                 height: 22,
                 child: CircularProgressIndicator(
-                    strokeWidth: 2.4, color: AppColors.green),
+                    strokeWidth: 2.4, color: AppColors.ink),
               ),
       ),
     );
@@ -313,14 +329,9 @@ class _ShipmentCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              Container(
-                width: 52,
-                height: 52,
-                margin: const EdgeInsets.only(right: 12),
-                clipBehavior: Clip.antiAlias,
-                decoration: const BoxDecoration(
-                    color: AppColors.greenSoft, shape: BoxShape.circle),
-                child: Image.asset(Illus.mode(s.type), fit: BoxFit.cover),
+              Padding(
+                padding: const EdgeInsets.only(right: 12),
+                child: ModeIcon(s.type, size: 46),
               ),
               Expanded(
                 child: Column(
@@ -352,9 +363,9 @@ class _ShipmentCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _kv('Tipe', s.type, AppColors.ink),
-              _kv('Revenue', s.revenue, AppColors.ink),
-              _kv('Profit', s.profit,
+              _kv('Moda', s.type, AppColors.ink),
+              _kv('Pendapatan', s.revenue, AppColors.ink),
+              _kv('Laba', s.profit,
                   s.profitUp ? AppColors.green : AppColors.loss),
             ],
           ),

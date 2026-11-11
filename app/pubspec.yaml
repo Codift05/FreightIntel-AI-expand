@@ -65,6 +65,24 @@ flutter:
 
   assets:
     - assets/illustrations/
+    - assets/logo.png
+
+  # Onest dibundel lokal. Tanpa ini google_fonts mengunduh saat runtime, dan
+  # di perangkat tanpa internet app jatuh ke Roboto (tipografi jadi salah).
+  # google_fonts otomatis memakai berkas ini karena family-nya persis "Onest".
+  fonts:
+    - family: Onest
+      fonts:
+        - asset: assets/fonts/Onest-400.ttf
+          weight: 400
+        - asset: assets/fonts/Onest-500.ttf
+          weight: 500
+        - asset: assets/fonts/Onest-600.ttf
+          weight: 600
+        - asset: assets/fonts/Onest-700.ttf
+          weight: 700
+        - asset: assets/fonts/Onest-800.ttf
+          weight: 800
 
   # To add assets to your application, add an assets section, like this:
   # assets:

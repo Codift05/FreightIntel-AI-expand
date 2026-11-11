@@ -65,7 +65,7 @@ class AppBottomNav extends StatelessWidget {
               duration: const Duration(milliseconds: 220),
               curve: kEaseOut,
               child: Icon(active ? activeIcon : idleIcon,
-                  size: 23, color: active ? AppColors.green : AppColors.muted),
+                  size: 23, color: active ? AppColors.ink : AppColors.muted),
             ),
             const SizedBox(height: 5),
             Text(label,
@@ -74,7 +74,7 @@ class AppBottomNav extends StatelessWidget {
                 style: TextStyle(
                     fontSize: 10.5,
                     fontWeight: active ? FontWeight.w700 : FontWeight.w600,
-                    color: active ? AppColors.greenInk : AppColors.muted)),
+                    color: active ? AppColors.ink : AppColors.muted)),
             const SizedBox(height: 5),
             // Garis indikator kecil (menandai tab aktif, bukan dekorasi).
             AnimatedContainer(
@@ -83,7 +83,7 @@ class AppBottomNav extends StatelessWidget {
               width: active ? 16 : 0,
               height: 3,
               decoration: BoxDecoration(
-                color: AppColors.green,
+                color: AppColors.ink,
                 borderRadius: BorderRadius.circular(AppRadii.pill),
               ),
             ),

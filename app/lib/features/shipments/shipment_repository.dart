@@ -7,8 +7,28 @@
 class Shipment {
   final String id, client, route, type, revenue, profit, status;
   final bool profitUp;
+  final bool arsip;
   const Shipment(this.id, this.client, this.route, this.type, this.revenue,
-      this.profit, this.profitUp, this.status);
+      this.profit, this.profitUp, this.status, {this.arsip = false});
+
+  Shipment copyWith({
+    String? client,
+    String? route,
+    String? type,
+    String? status,
+    bool? arsip,
+  }) =>
+      Shipment(
+        id,
+        client ?? this.client,
+        route ?? this.route,
+        type ?? this.type,
+        revenue,
+        profit,
+        profitUp,
+        status ?? this.status,
+        arsip: arsip ?? this.arsip,
+      );
 }
 
 /// Urutan siklus status shipment (PRD §9.2).
@@ -30,6 +50,12 @@ class ShipmentRepository {
   final List<Shipment> _cache = [];
   bool get hasCache => _cache.isNotEmpty;
   List<Shipment> get cached => List.unmodifiable(_cache);
+
+  /// Ganti satu shipment di cache (dipakai layar Ubah shipment).
+  void update(Shipment s) {
+    final i = _cache.indexWhere((e) => e.id == s.id);
+    if (i >= 0) _cache[i] = s;
+  }
 
   /// Ambil satu halaman. List kosong = sudah habis.
   Future<List<Shipment>> fetchPage(int page) async {

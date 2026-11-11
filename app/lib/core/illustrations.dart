@@ -9,22 +9,6 @@ class Illus {
   static const patternRoutes = '${_b}pattern_routes.png';
   static const avatarOwner = '${_b}avatar_owner.png';
 
-  static const modeOcean = '${_b}mode_ocean.png';
-  static const modeAir = '${_b}mode_air.png';
-  static const modeTrucking = '${_b}mode_trucking.png';
-  static const modeHandling = '${_b}mode_handling.png';
-
-  /// Ilustrasi disc sesuai mode pengiriman.
-  static String mode(String type) {
-    switch (type) {
-      case 'Ocean Freight':
-        return modeOcean;
-      case 'Air Freight':
-        return modeAir;
-      case 'Handling':
-        return modeHandling;
-      default:
-        return modeTrucking;
-    }
-  }
+  // Disc mode (mode_*.png) diganti glyph vektor di core/widgets/mode_icon.dart
+  // karena raster pecah di 34-46px. Berkasnya masih ada di assets/illustrations.
 }

@@ -1,159 +1,258 @@
 import 'package:flutter/material.dart';
 import 'package:iconsax_plus/iconsax_plus.dart';
 import '../../core/theme/app_theme.dart';
-import '../../core/illustrations.dart';
 import '../../core/widgets/app_card.dart';
+import '../../core/widgets/pressable.dart';
+import '../finance/finance_repository.dart';
+import '../finance/record_transaction_screen.dart';
 import 'shipment_repository.dart';
+import 'edit_shipment_screen.dart';
 import 'status_chip.dart';
 
-/// Detail shipment: identitas, P&L, timeline status, rincian revenue/cost,
-/// dan custom field (PRD FR-SHP-04, FR-PRF). Data demo.
-class ShipmentDetailScreen extends StatelessWidget {
-  final Shipment s;
-  const ShipmentDetailScreen(this.s, {super.key});
+/// Detail shipment (gaya layar kanan Reference Design):
+/// header tengah + tombol bulat, kartu hero gelap ringkas dengan delta pill,
+/// rincian pendapatan/biaya Bahasa Indonesia, dan tombol aksi ganda di bawah
+/// (Catat Biaya [gelap] + Catat Masuk [lime]).
+class ShipmentDetailScreen extends StatefulWidget {
+  final Shipment shipment;
+  const ShipmentDetailScreen(this.shipment, {super.key});
+
+  @override
+  State<ShipmentDetailScreen> createState() => _ShipmentDetailScreenState();
+}
+
+class _ShipmentDetailScreenState extends State<ShipmentDetailScreen> {
+  late Shipment s = widget.shipment;
+
+  /// Buka layar ubah; hasilnya menggantikan data yang tampil.
+  Future<void> _edit() async {
+    final updated = await Navigator.of(context).push<Shipment>(
+      MaterialPageRoute(builder: (_) => EditShipmentScreen(s)),
+    );
+    if (updated != null && mounted) setState(() => s = updated);
+  }
 
   int get _rev => _num(s.revenue);
   int get _profit => _num(s.profit);
   int get _cost => _rev - _profit;
   double get _margin => _rev == 0 ? 0 : _profit / _rev * 100;
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(s.id, style: numStyle(size: 17)),
-        leading: IconButton(
-          icon: const Icon(IconsaxPlusLinear.arrow_left_2, color: AppColors.ink),
-          onPressed: () => Navigator.of(context).maybePop(),
+  Future<void> _recordForShipment(
+      BuildContext context, FinanceEntryType type) async {
+    final repo = ShipmentRepository.instance;
+    final entry = await Navigator.of(context).push<Invoice>(
+      MaterialPageRoute(
+        builder: (_) => RecordTransactionScreen(
+          type: type,
+          loadShipments: () =>
+              repo.hasCache ? Future.value(repo.cached) : repo.fetchPage(0),
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(IconsaxPlusLinear.edit_2, color: AppColors.ink),
-            tooltip: 'Edit shipment',
-            onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Edit shipment: segera')),
-            ),
-          ),
-        ],
       ),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
-        children: [
-          _header(),
-          const SizedBox(height: 16),
-          _pnl(),
-          const SizedBox(height: 20),
-          _title('Status pengiriman'),
-          const SizedBox(height: 10),
-          _Timeline(current: s.status),
-          const SizedBox(height: 20),
-          _title('Rincian revenue'),
-          const SizedBox(height: 10),
-          _items(_split(_rev, const ['Freight charge', 'Handling', 'Dokumen & lain'],
-              const ['Paid', 'Partial', 'Unpaid']), AppColors.greenInk),
-          const SizedBox(height: 16),
-          _title('Rincian cost'),
-          const SizedBox(height: 10),
-          _items(_split(_cost, const ['Vendor utama', 'Trucking', 'Bea & retribusi'],
-              const ['Paid', 'Unpaid', 'Paid']), AppColors.loss),
-          const SizedBox(height: 20),
-          _title('Detail'),
-          const SizedBox(height: 10),
-          _customFields(),
-          const SizedBox(height: 16),
-          const Text('Rincian contoh, belum terhubung data.',
-              style: TextStyle(color: AppColors.muted, fontSize: 12)),
-        ],
-      ),
+    );
+    if (entry == null || !context.mounted) return;
+    FinanceRepository.instance.add(entry);
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Transaksi berhasil ditambahkan.')),
     );
   }
 
-  Widget _header() => AppCard(
-        color: AppColors.greenSoft,
-        shadow: AppShadows.soft,
-        child: Row(
+  @override
+  Widget build(BuildContext context) {
+    final loss = _profit < 0;
+    final profitStr = '${loss ? '-' : ''}Rp ${_profit.abs()} jt';
+    final marginStr =
+        '${_margin >= 0 ? '+' : ''}${_margin.toStringAsFixed(1).replaceAll('.', ',')}%';
+
+    return Scaffold(
+      body: SafeArea(
+        child: Column(
           children: [
-            Container(
-              width: 64,
-              height: 64,
-              clipBehavior: Clip.antiAlias,
-              decoration: const BoxDecoration(
-                  color: Colors.white, shape: BoxShape.circle),
-              child: Image.asset(Illus.mode(s.type), fit: BoxFit.cover),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
+              child: _topBar(context),
             ),
-            const SizedBox(width: 14),
             Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(20, 6, 20, 24),
                 children: [
-                  Text(s.client, style: numStyle(size: 15)),
-                  const SizedBox(height: 4),
-                  Row(children: [
-                    const Icon(IconsaxPlusBold.routing,
-                        size: 14, color: AppColors.inkSoft),
-                    const SizedBox(width: 4),
-                    Expanded(
-                        child: Text(s.route,
-                            style: const TextStyle(
-                                fontSize: 13, color: AppColors.inkSoft))),
-                  ]),
+                  HighlightCard(
+                    label: '${s.route}  ·  ${s.type}',
+                    value: profitStr,
+                    sub: 'Pendapatan Rp $_rev jt  ·  Biaya Rp $_cost jt',
+                    delta: marginStr,
+                    deltaUp: !loss,
+                  ),
+                  const SizedBox(height: 18),
+                  _title('Status pengiriman'),
                   const SizedBox(height: 10),
-                  Row(children: [
-                    StatusChip(s.status),
-                    const SizedBox(width: 8),
-                    Text(s.type, style: labelStyle(color: AppColors.greenInk)),
-                  ]),
+                  _Timeline(current: s.status),
+                  const SizedBox(height: 20),
+                  _title('Rincian pendapatan'),
+                  const SizedBox(height: 10),
+                  _items(
+                      _split(
+                          _rev,
+                          const [
+                            'Ongkos angkut utama',
+                            'Penanganan & muat',
+                            'Dokumen & administrasi'
+                          ],
+                          const ['Lunas', 'Cicilan', 'Belum lunas']),
+                      AppColors.green),
+                  const SizedBox(height: 16),
+                  _title('Rincian biaya'),
+                  const SizedBox(height: 10),
+                  _items(
+                      _split(
+                          _cost,
+                          const [
+                            'Vendor pelayaran/maskapai',
+                            'Armada darat',
+                            'Kepabeanan & pelabuhan'
+                          ],
+                          const ['Lunas', 'Belum lunas', 'Lunas']),
+                      AppColors.loss),
+                  const SizedBox(height: 20),
+                  _title('Informasi kargo'),
+                  const SizedBox(height: 10),
+                  _customFields(),
+                  const SizedBox(height: 14),
+                  const Text('Rincian contoh, belum terhubung data.',
+                      style: TextStyle(color: AppColors.muted, fontSize: 12)),
                 ],
               ),
             ),
+            _bottomActions(context),
           ],
         ),
-      );
+      ),
+    );
+  }
 
-  Widget _pnl() {
-    final loss = _profit < 0;
-    return AppCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('Laba kotor', style: labelStyle()),
-          const SizedBox(height: 8),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.baseline,
-            textBaseline: TextBaseline.alphabetic,
+  /// Header atas gaya layar kanan Reference Design:
+  /// tombol bulat kiri (kembali), judul+subjudul di tengah, status/aksi kanan.
+  Widget _topBar(BuildContext context) {
+    return Row(
+      children: [
+        Pressable(
+          semanticLabel: 'Kembali',
+          onTap: () => Navigator.of(context).maybePop(),
+          child: Container(
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              shape: BoxShape.circle,
+              border: Border.all(color: AppColors.line),
+            ),
+            child: const Icon(IconsaxPlusLinear.arrow_left,
+                color: AppColors.ink, size: 20),
+          ),
+        ),
+        Expanded(
+          child: Column(
             children: [
-              Text('${loss ? '-' : ''}Rp ${_profit.abs()} jt',
-                  style: numStyle(
-                      size: 28, color: loss ? AppColors.loss : AppColors.green)),
-              const SizedBox(width: 10),
-              Text('Margin ${_margin.toStringAsFixed(1)}%',
+              Text(s.id, style: numStyle(size: 16)),
+              const SizedBox(height: 2),
+              Text(s.client,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                       color: AppColors.muted,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600)),
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w500)),
             ],
           ),
-          const Divider(height: 24, color: AppColors.line),
-          Row(
-            children: [
-              Expanded(child: _pnlCol('Revenue', 'Rp $_rev jt', AppColors.ink)),
-              Container(width: 1, height: 34, color: AppColors.line),
-              Expanded(child: _pnlCol('Cost', 'Rp $_cost jt', AppColors.loss)),
-            ],
+        ),
+        StatusChip(s.status),
+        const SizedBox(width: 8),
+        Pressable(
+          semanticLabel: 'Ubah shipment',
+          onTap: _edit,
+          child: Container(
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              shape: BoxShape.circle,
+              border: Border.all(color: AppColors.line),
+            ),
+            child: const Icon(IconsaxPlusLinear.edit_2,
+                color: AppColors.ink, size: 19),
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// Bar aksi bawah 2 tombol (Gelap di kiri + Lime di kanan) sesuai
+  /// tombol "Sell ↗" & "Buy ↙" pada layar kanan Reference Design.
+  Widget _bottomActions(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(20, 10, 20, 16),
+      decoration: const BoxDecoration(
+        color: AppColors.bg,
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Pressable(
+              semanticLabel: 'Catat biaya shipment',
+              onTap: () => _recordForShipment(context, FinanceEntryType.cost),
+              child: Container(
+                height: 52,
+                decoration: BoxDecoration(
+                  color: AppColors.inkDeep,
+                  borderRadius: BorderRadius.circular(18),
+                ),
+                child: const Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text('Catat Biaya',
+                        style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700)),
+                    SizedBox(width: 6),
+                    Icon(Icons.north_east_rounded,
+                        size: 18, color: Colors.white),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Pressable(
+              semanticLabel: 'Catat pemasukan shipment',
+              onTap: () =>
+                  _recordForShipment(context, FinanceEntryType.revenue),
+              child: Container(
+                height: 52,
+                decoration: BoxDecoration(
+                  color: AppColors.lime,
+                  borderRadius: BorderRadius.circular(18),
+                ),
+                child: const Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text('Catat Masuk',
+                        style: TextStyle(
+                            color: AppColors.ink,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700)),
+                    SizedBox(width: 6),
+                    Icon(Icons.south_west_rounded,
+                        size: 18, color: AppColors.ink),
+                  ],
+                ),
+              ),
+            ),
           ),
         ],
       ),
     );
   }
-
-  Widget _pnlCol(String label, String value, Color c) => Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Text(label, style: labelStyle()),
-          const SizedBox(height: 4),
-          Text(value, style: numStyle(size: 17, color: c)),
-        ],
-      );
 
   Widget _title(String t) => Text(t, style: numStyle(size: 15));
 
@@ -188,8 +287,8 @@ class ShipmentDetailScreen extends StatelessWidget {
 
   Widget _payChip(String pay) {
     final (Color fg, Color bg) = switch (pay) {
-      'Paid' => (AppColors.greenInk, AppColors.greenSoft),
-      'Partial' => (AppColors.warning, AppColors.warningSoft),
+      'Lunas' => (AppColors.greenInk, AppColors.greenSoft),
+      'Cicilan' => (AppColors.warning, AppColors.warningSoft),
       _ => (AppColors.loss, AppColors.lossSoft),
     };
     return Container(
@@ -204,7 +303,7 @@ class ShipmentDetailScreen extends StatelessWidget {
   Widget _customFields() {
     const fields = {
       'No. BL': 'MBL-2610-0291',
-      'Container': '1 x 40ft HC',
+      'Kontainer': '1 x 40ft HC',
       'Incoterm': 'CIF',
       'ETD': '12 Okt 2026',
       'ETA': '28 Okt 2026',
