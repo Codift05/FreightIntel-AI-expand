@@ -8,14 +8,13 @@
 Baca `../AGENTS.md` lebih dulu: di sana ada aturan, jebakan teknis, dan
 invarian desain. Dokumen ini isinya **keadaan frontend**.
 
-### 1. Yang harus dicek paling awal
-**Bundling font Onest belum terverifikasi di perangkat.** TTF 400/500/600/700/800
-sudah ada di `app/assets/fonts/` dan sudah dideklarasikan di `pubspec.yaml`
-dengan family `Onest`, tapi build ke HP belum pernah selesai dijalankan untuk
-membuktikannya. Jalankan ke perangkat, lalu pastikan log tidak memuat
-`google_fonts was unable to load font`. Sebelum itu terbukti, **jangan menilai
-tipografi** — tanpa bundling yang jalan, perangkat tanpa internet merender
-Roboto, bukan Onest.
+### 1. Status bundling font Onest (terverifikasi offline)
+**Bundling font Onest sudah diperbaiki dan terverifikasi tanpa internet.**
+Kelima bobot (`Onest-Regular.ttf`, `Onest-Medium.ttf`, `Onest-SemiBold.ttf`,
+`Onest-Bold.ttf`, `Onest-ExtraBold.ttf`) terdaftar di `flutter: assets:`
+(agar masuk `AssetManifest.bin` yang dibaca `google_fonts`) sekaligus di
+`flutter: fonts:`. `GoogleFonts.config.allowRuntimeFetching = false` dikunci di
+`lib/main.dart` dan diuji otomatis lewat `test/font_bundle_test.dart`.
 
 ### 2. Keadaan sebenarnya
 Semua modul PRD sudah punya layar (lihat tabel di bawah). Yang **tidak** ada:
@@ -26,13 +25,9 @@ chat Tanya AI) — itu keputusan sadar, bukan pekerjaan setengah jadi. Jangan
 "memperbaiki"-nya dengan membuatnya seolah berfungsi.
 
 ### 3. Lanjutan yang masuk akal
-1. Verifikasi font di perangkat (butir 1).
-2. Commit pekerjaan yang menumpuk di branch `feat/payments-notif-dashboard-swipe`
-   (banyak file belum di-commit).
-3. Bersihkan `phosphor_flutter` & `fl_chart` dari `pubspec.yaml` (nol impor).
-4. Mulai backend NestJS + PostgreSQL sesuai PRD, lalu ganti isi tiap
+1. Mulai backend NestJS + PostgreSQL sesuai PRD, lalu ganti isi tiap
    repository satu per satu. Urutan aman: Shipment -> Revenue/Cost -> Dashboard.
-5. Saat backend masuk: uang = DECIMAL (BR-04), isolasi `company_id`
+2. Saat backend masuk: uang = DECIMAL (BR-04), isolasi `company_id`
    (FR-CMP-05), RBAC dicek di server (FR-USR-03).
 
 ## Stack
@@ -160,8 +155,6 @@ export PDF/Excel benar-benar menghasilkan file.
 ## Known debt / audit items
 - Created shipment / transaction / payment are in-memory only (lost on restart).
 - Create form lacks container & ETD/ETA fields (`shortcut:` comment in file).
-- `phosphor_flutter` & `fl_chart` ada di `pubspec.yaml` tapi **tidak diimpor**
-  di `lib/` (chart digambar `CustomPainter`). Kandidat dihapus.
 - Insight: analisis & jawaban chat hard-coded (cocok kata kunci, bukan model).
   Riwayat chat hilang saat layar ditutup.
 - Semua data layar baru in-memory: perubahan pengaturan, pengguna, izin, custom
@@ -171,12 +164,19 @@ export PDF/Excel benar-benar menghasilkan file.
 - Pindah perusahaan baru mengganti label; data modul belum ikut berganti.
 
 ## Done (recent audit fixes)
+- Bundling font lokal `Onest` diperbaiki (`Onest-Regular/Medium/SemiBold/Bold/ExtraBold.ttf` + `assets/fonts/` di `AssetManifest` + `allowRuntimeFetching = false`) dan diverifikasi lewat `test/font_bundle_test.dart`; `fl_chart` & `phosphor_flutter` dihapus dari `pubspec.yaml`.
 - Dashboard, Finance, Shipments, Detail, and Login aligned to `docs/Reference Design.png` (Lime + Dark two-tier hero card with concentric rings, Finance balance vault with 3-button dock & sparkline rows, interactive trend chart with crosshair & dark tooltip, Shipment Detail dual bottom actions).
 - All English UI labels (`Revenue`, `Cost`, `Profit`, `Paid/Partial/Unpaid`, `FREIGHT INTELLIGENCE` eyebrow) migrated to Bahasa Indonesia sentence case; `flutter analyze lib` is 0 issues.
 - Dashboard period chips (Harian/Bulanan/Tahunan) swap hero + stat values.
 - Insight tab icon changed star → `lamp_charge`. Finance localized to ID.
 
 ## Changelog
+- 2026-11-11 (v) — **Perbaiki resolusi aset lokal `Onest` di `google_fonts` + hapus dependensi mati**:
+  - Audit sumber `google_fonts-8.2.1` (`findFamilyWithVariantAssetPath`) menemukan bahwa paket ini mencari berkas di `AssetManifest` berdasarkan nama varian API (`Onest-Regular.ttf`, `Onest-Medium.ttf`, `Onest-SemiBold.ttf`, `Onest-Bold.ttf`, `Onest-ExtraBold.ttf`), bukan `Onest-400..800.ttf`, serta mewajibkan folder `assets/fonts/` terdaftar di bawah `flutter: assets:` (bukan hanya `flutter: fonts:`).
+  - Berkas di `app/assets/fonts/` diganti namanya sesuai konvensi `google_fonts`, `- assets/fonts/` ditambahkan ke `pubspec.yaml`, dan `GoogleFonts.config.allowRuntimeFetching = false` dikunci di `lib/main.dart` agar aplikasi tidak pernah mengunduh font saat runtime.
+  - Tambah pengujian otomatis `app/test/font_bundle_test.dart` yang memverifikasi pemuatan 5 bobot `Onest` (`w400`–`w800`) secara offline (`flutter test` = lulus).
+  - Hapus `fl_chart` dan `phosphor_flutter` dari `pubspec.yaml` (0 impor di seluruh `lib/`).
+  - Perbarui *knowledge graph* `app/graphify-out/` dan `AGENTS.md`.
 - 2026-11-11 (u) — **Onest dibundel lokal + dokumentasi serah terima**.
   - Build pertama ke HP (CPH1937) berhasil terpasang, tapi logcat menunjukkan
     `google_fonts was unable to load font Onest-Bold` -> `Failed host lookup:

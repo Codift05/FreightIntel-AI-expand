@@ -63,14 +63,10 @@ dibuat dari nol lagi. Rinciannya: tabel cakupan di `docs/FRONTEND.md`.
 Yang tersisa bukan UI, melainkan **backend + penyambungan**. Jangan mulai
 menulis layar baru sebelum membaca `docs/FRONTEND.md` bagian "Known debt".
 
-### BELUM TERVERIFIKASI — cek ini lebih dulu
-Font **Onest baru saja dibundel** ke `assets/fonts/` + `pubspec.yaml`
-(sebelumnya `google_fonts` mengunduh saat runtime, dan di HP tanpa internet app
-jatuh ke Roboto). Berkas dan deklarasinya sudah ada, **tapi belum pernah
-dijalankan sampai selesai di perangkat** — HP lepas dari USB sebelum build
-kelar. Tugas pertama: build ke perangkat, lalu pastikan log **tidak** memuat
-`google_fonts was unable to load font`. Kalau masih muncul, berarti bundling
-belum terbaca dan harus diperbaiki sebelum menilai tipografi apa pun.
+### Bundling font Onest (TERVERIFIKASI OFFLINE)
+Font **Onest sudah dibundel & diverifikasi offline** di `assets/fonts/` + `pubspec.yaml`:
+- `google_fonts` mencari berkas di `AssetManifest` dengan nama varian API (`Onest-Regular.ttf`, `Onest-Medium.ttf`, `Onest-SemiBold.ttf`, `Onest-Bold.ttf`, `Onest-ExtraBold.ttf`), bukan `Onest-400..800.ttf`, dan direktori `assets/fonts/` wajib terdaftar di bawah `flutter: assets:`.
+- `GoogleFonts.config.allowRuntimeFetching = false` sudah dikunci di `lib/main.dart` dan diuji otomatis di `test/font_bundle_test.dart` (`flutter test` lulus 100% tanpa jaringan).
 
 ## Jebakan yang sudah pernah menghabiskan waktu
 
