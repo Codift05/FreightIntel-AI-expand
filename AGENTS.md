@@ -54,3 +54,80 @@ patch skills). Use them for UI audits and polish.
 1. `flutter analyze lib` is clean (or only pre-existing infos).
 2. App runs; you clicked the changed flow.
 3. Docs updated per RULE 0.
+
+## Status saat ini (per 2026-11-11)
+
+**Semua modul PRD sudah punya layar frontend.** Tidak ada layar yang perlu
+dibuat dari nol lagi. Rinciannya: tabel cakupan di `docs/FRONTEND.md`.
+
+Yang tersisa bukan UI, melainkan **backend + penyambungan**. Jangan mulai
+menulis layar baru sebelum membaca `docs/FRONTEND.md` bagian "Known debt".
+
+### BELUM TERVERIFIKASI — cek ini lebih dulu
+Font **Onest baru saja dibundel** ke `assets/fonts/` + `pubspec.yaml`
+(sebelumnya `google_fonts` mengunduh saat runtime, dan di HP tanpa internet app
+jatuh ke Roboto). Berkas dan deklarasinya sudah ada, **tapi belum pernah
+dijalankan sampai selesai di perangkat** — HP lepas dari USB sebelum build
+kelar. Tugas pertama: build ke perangkat, lalu pastikan log **tidak** memuat
+`google_fonts was unable to load font`. Kalau masih muncul, berarti bundling
+belum terbaca dan harus diperbaiki sebelum menilai tipografi apa pun.
+
+## Jebakan yang sudah pernah menghabiskan waktu
+
+Baca ini sebelum eksperimen; semuanya sudah pernah terjadi di repo ini.
+
+- **Hot reload vs restart.** Ubah field pada `const` class -> hot reload DITOLAK
+  ("Const class cannot remove fields"). Itu batasan hot reload, bukan bug kode.
+  Pakai hot restart: `kill -USR2 <pid flutter run>`.
+- **Aset baru atau aset yang ditimpa butuh BUILD ULANG PENUH**, bukan reload dan
+  bukan restart. Berlaku untuk `assets/illustrations/*`, `assets/fonts/*`, dan
+  perubahan `pubspec.yaml`.
+- **`pkill -f "flutter run -d chrome"` membunuh shell-nya sendiri** karena pola
+  itu cocok dengan baris perintah si pkill. Pakai kelas karakter:
+  `pkill -f "run -d chro[m]e"`. Hal sama berlaku untuk `pgrep -f qemu-system`
+  (pakai `pgrep -c -x qemu-system-x86_64`).
+- **`/tmp` dibersihkan saat tanggal berganti.** Jangan simpan log `flutter run`
+  di `/tmp`; proses yang log-nya hilang juga ikut mati.
+- **RAM mesin 14 GB dan pernah OOM sampai VS Code terbunuh** gara-gara Gradle
+  `-Xmx8G`. Sekarang `android/gradle.properties` dikunci `-Xmx2G` +
+  `org.gradle.daemon=false`. Jangan dinaikkan. Tutup `flutter run -d chrome`
+  sebelum build Android.
+- **HP uji = OPPO A9 2020 (CPH1937), id `c7a35bc8`.** Kalau `adb devices`
+  kosong, cek `lsusb`: interface `ff/42/01` = ADB, `ff/ff/00` = mode diag
+  (bukan ADB). Di ColorOS: Pengaturan > Tentang ponsel > ketuk Versi 7x, lalu
+  Pengaturan tambahan > Opsi pengembang > Debugging USB + Nonaktifkan
+  pemantauan izin.
+- **HP ini tidak punya internet.** Apa pun yang mengambil sumber daya dari
+  jaringan saat runtime akan gagal diam-diam dan merusak tampilan.
+
+## Invarian desain (jangan dilanggar tanpa izin user)
+
+Penjelasan lengkap di `app/DESIGN.md`. Yang paling sering dilanggar agent:
+
+- **Lime `#D3F85A` = aksi interaktif. Hijau `#17A55B` / merah `#E0523D` = arti
+  data.** Jangan pakai hijau sebagai dekorasi (mis. latar ikon) dan jangan pakai
+  lime untuk menandakan "positif".
+- **Satu kartu gelap (`inkDeep`) per layar**, untuk metrik paling penting.
+- **Hierarki angka: hero 30px, KPI sekunder 19px, rasio ~1,6x.** Menaikkan KPI
+  sekunder ke 24+ membuat layar terasa "besar-besar dan dominan" (user sudah
+  pernah menolak ini).
+- **Bobot angka w700, bukan w800**, dengan tracking negatif. Pill/tombol kecil
+  (11-14px) tetap w800.
+- **Avatar dipasang tanpa border.** Cincin putih di atas bg `#EFF1F3` terbaca
+  sebagai halo.
+- **Struktur bottom nav sudah disetujui user — jangan diubah**, warna saja.
+- **Tidak ada kontrol mati.** Fitur yang belum jalan harus menjelaskan diri
+  (SnackBar/chip), bukan diam saja saat ditekan.
+- **Setiap angka demo ditandai jujur** (`DemoNote`), jangan tampil seolah data
+  perusahaan sungguhan.
+
+## Cara user bekerja
+
+- Bahasa Indonesia, langsung ke pokok masalah.
+- Sering berganti agent AI -> karena itu RULE 0 ada. Dokumentasi bukan opsional.
+- Minta skill dipakai saat ngoding: `ponytail` (perubahan minimal), `caveman`,
+  `antislop`/`antislop-ui`, `apple-design`, `impeccable`.
+- Tidak suka AI-slop: eyebrow ALL-CAPS, gradien sebagai default, angka palsu.
+- Kalau user bertanya "ini kebesaran ga?" atau "ini janggal ga?", dia minta
+  **audit dengan angka**, bukan jawaban selera. Ukur dari kode, bandingkan ke
+  skala tipe resmi (HIG / Material 3), baru simpulkan.

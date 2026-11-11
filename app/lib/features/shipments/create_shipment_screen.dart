@@ -73,7 +73,8 @@ class _CreateShipmentScreenState extends State<CreateShipmentScreen> {
             const SizedBox(height: 28),
             FilledButton(
               style: FilledButton.styleFrom(
-                backgroundColor: AppColors.green,
+                backgroundColor: AppColors.lime,
+                    foregroundColor: AppColors.ink,
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(AppRadii.pill)),

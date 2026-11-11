@@ -4,21 +4,27 @@ import 'package:google_fonts/google_fonts.dart';
 
 /// Token warna brand FreightIntel AI (lihat app/DESIGN.md).
 class AppColors {
-  // Surface / netral
-  static const bg = Color(0xFFF4F6F8);
+  // Surface / netral (abu dingin, ikut Reference Design)
+  static const bg = Color(0xFFEFF1F3);
   static const surface = Color(0xFFFFFFFF);
-  static const surfaceAlt = Color(0xFFF8FAFC);
-  static const line = Color(0xFFEDF1F5);
+  static const surfaceAlt = Color(0xFFF6F7F9);
+  static const line = Color(0xFFE8EAED);
 
-  // Teks
-  static const ink = Color(0xFF16365C);
-  static const inkSoft = Color(0xFF3A4B66);
-  static const muted = Color(0xFF5C6B7D); // AA: 5.45:1 di white, 5.03:1 di bg
+  // Teks (near-black, bukan navy)
+  static const ink = Color(0xFF141414); // 18.4:1 di putih
+  static const inkDeep = Color(0xFF141414); // kartu hero gelap
+  static const inkSoft = Color(0xFF5B6066); // 6.3:1 di putih
+  static const muted = Color(0xFF6B7280); // 4.8:1 di putih (label kecil)
+  static const onDark = Color(0xFF9CA3AF); // label di atas kartu gelap (7.3:1)
 
-  // Aksen (SATU)
+  // Aksen interaktif (lime, ikut referensi) — teks di atasnya = ink
+  static const lime = Color(0xFFD3F85A);
+
+  // Hijau = data positif (bukan aksen UI)
   static const green = Color(0xFF17A55B);
   static const greenSoft = Color(0xFFE7F6EE);
   static const greenInk = Color(0xFF0E7A42);
+  static const greenBright = Color(0xFF3FD98A); // positif di atas kartu gelap
 
   // Semantik finansial
   static const loss = Color(0xFFE0523D);
@@ -61,10 +67,14 @@ class AppShadows {
   ];
 }
 
-/// Angka tabular tebal (uang/KPI = hero).
+/// Angka tabular (uang/KPI).
+///
+/// Bobot w700, bukan w800: di Onest w800 terbaca terlalu padat untuk nominal
+/// besar. Tracking dirapatkan seiring ukuran naik — angka besar dengan jarak
+/// huruf normal terlihat renggang dan kurang rapi.
 TextStyle numStyle({
   double size = 20,
-  FontWeight weight = FontWeight.w800,
+  FontWeight weight = FontWeight.w700,
   Color? color,
 }) =>
     GoogleFonts.onest(
@@ -72,6 +82,11 @@ TextStyle numStyle({
       fontWeight: weight,
       color: color ?? AppColors.ink,
       height: 1.1,
+      letterSpacing: size >= 26
+          ? -0.8
+          : size >= 20
+              ? -0.4
+              : -0.2,
       fontFeatures: const [FontFeature.tabularFigures()],
     );
 

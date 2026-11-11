@@ -24,3 +24,7 @@ Thumbs.db
 .vscode/
 *.iml
 node_modules/
+
+# Graphify local cache & interpreter markers
+**/graphify-out/cache/
+**/graphify-out/.graphify_*

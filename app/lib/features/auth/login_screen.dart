@@ -25,10 +25,10 @@ class LoginScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 22),
                 const Center(child: Wordmark(fontSize: 28)),
-                const SizedBox(height: 4),
+                const SizedBox(height: 6),
                 Center(
-                    child: Text('FREIGHT INTELLIGENCE',
-                        style: labelStyle().copyWith(letterSpacing: 3))),
+                    child: Text('Manajemen keuangan & pengiriman kargo',
+                        style: labelStyle())),
                 const SizedBox(height: 36),
                 _field('Email', Icons.mail_outline_rounded),
                 const SizedBox(height: 14),
@@ -36,7 +36,8 @@ class LoginScreen extends StatelessWidget {
                 const SizedBox(height: 24),
                 FilledButton(
                   style: FilledButton.styleFrom(
-                    backgroundColor: AppColors.green,
+                    backgroundColor: AppColors.lime,
+                    foregroundColor: AppColors.ink,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
                         borderRadius:

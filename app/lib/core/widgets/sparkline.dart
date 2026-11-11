@@ -20,7 +20,7 @@ class Sparkline extends StatelessWidget {
       tween: Tween(begin: 0, end: 1),
       duration: const Duration(milliseconds: 700),
       curve: Curves.easeOutCubic,
-      builder: (_, t, __) => CustomPaint(
+      builder: (_, t, _) => CustomPaint(
         painter: _SparkPainter(data, color, strokeWidth, t),
         size: Size.infinite,
       ),

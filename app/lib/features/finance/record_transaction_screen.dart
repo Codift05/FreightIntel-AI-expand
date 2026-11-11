@@ -141,7 +141,7 @@ class _RecordTransactionScreenState extends State<RecordTransactionScreen> {
             const SizedBox(height: 8),
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
-              activeThumbColor: AppColors.green,
+              activeThumbColor: AppColors.ink,
               title: const Text('Sudah lunas',
                   style: TextStyle(
                       fontWeight: FontWeight.w700, color: AppColors.ink)),
@@ -152,7 +152,8 @@ class _RecordTransactionScreenState extends State<RecordTransactionScreen> {
             FilledButton(
               key: const Key('save-transaction'),
               style: FilledButton.styleFrom(
-                backgroundColor: AppColors.green,
+                backgroundColor: AppColors.lime,
+                    foregroundColor: AppColors.ink,
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(AppRadii.pill)),
