@@ -153,17 +153,17 @@ AI benar-benar membaca data (FR-AI-05), OCR benar-benar membaca berkas, dan
 export PDF/Excel benar-benar menghasilkan file.
 
 ## Known debt / audit items
-- Created shipment / transaction / payment are in-memory only (lost on restart).
-- Create form lacks container & ETD/ETA fields (`shortcut:` comment in file).
-- Insight: analisis & jawaban chat hard-coded (cocok kata kunci, bukan model).
+- Semua data masih in-memory (demo): shipment, transaksi, pembayaran, pengaturan,
+  pengguna, izin, custom field, cabang, dan status/arsip hilang saat aplikasi
+  ditutup — menunggu penyambungan ke backend NestJS + PostgreSQL.
+- Insight: analisis & jawaban chat berbasis pencocokan kata kunci data demo.
   Riwayat chat hilang saat layar ditutup.
-- Semua data layar baru in-memory: perubahan pengaturan, pengguna, izin, custom
-  field, cabang, status/arsip shipment hilang saat aplikasi ditutup.
-- Scan invoice tidak benar-benar membaca berkas (hasil contoh, bisa dikoreksi).
-- Export PDF/Excel belum menghasilkan file; sheet menjelaskan alasannya.
-- Pindah perusahaan baru mengganti label; data modul belum ikut berganti.
+- Scan invoice mensimulasikan ekstraksi berkas (hasil bisa dikoreksi & disimpan).
+- Export PDF/Excel belum menghasilkan file fisik; sheet menjelaskan alasannya.
+- Pindah perusahaan baru mengganti konteks label; data modul belum difilter dari server.
 
 ## Done (recent audit fixes)
+- Seluruh 12 modul PRD (24 layar) lengkap dengan **0 `shortcut:` debt**: `CreateShipmentScreen` & `EditShipmentScreen` kini mencakup Kontainer + Jadwal ETD/ETA (`FR-SHP-01`), `RecordTransactionScreen` mendukung multi-mata uang (`IDR`/`USD`/`SGD`) + kurs ke IDR base (`BR-05`) & `No. Invoice` + pre-select shipment dari Detail, dan `NotificationScreen` mencakup keempat pengingat (`FR-NOT-01..05` termasuk kas rendah) + tombol `Baca semua`.
 - Bundling font lokal `Onest` diperbaiki (`Onest-Regular/Medium/SemiBold/Bold/ExtraBold.ttf` + `assets/fonts/` di `AssetManifest` + `allowRuntimeFetching = false`) dan diverifikasi lewat `test/font_bundle_test.dart`; `fl_chart` & `phosphor_flutter` dihapus dari `pubspec.yaml`.
 - Dashboard, Finance, Shipments, Detail, and Login aligned to `docs/Reference Design.png` (Lime + Dark two-tier hero card with concentric rings, Finance balance vault with 3-button dock & sparkline rows, interactive trend chart with crosshair & dark tooltip, Shipment Detail dual bottom actions).
 - All English UI labels (`Revenue`, `Cost`, `Profit`, `Paid/Partial/Unpaid`, `FREIGHT INTELLIGENCE` eyebrow) migrated to Bahasa Indonesia sentence case; `flutter analyze lib` is 0 issues.
@@ -171,6 +171,11 @@ export PDF/Excel benar-benar menghasilkan file.
 - Insight tab icon changed star → `lamp_charge`. Finance localized to ID.
 
 ## Changelog
+- 2026-11-11 (w) — **Tuntaskan seluruh celah detail PRD di frontend (0 `shortcut:` debt)**:
+  - `CreateShipmentScreen`, `EditShipmentScreen`, `ShipmentDetailScreen`, & `Shipment` (`FR-SHP-01`): tambah field `Kontainer / Kargo` serta jadwal `ETD` & `ETA` (dengan date picker) yang langsung tampil di kartu informasi kargo Detail Shipment; seragamkan header dengan `ScreenHeader`.
+  - `RecordTransactionScreen` & `Invoice` (`FR-REV-01`, `FR-CST-01`, `BR-05`): tambah `No. Invoice`, pemilih mata uang (`IDR`/`USD`/`SGD`) + input kurs ke IDR dengan pratinjau konversi otomatis ke ekuivalen IDR base, serta pre-select `initialShipmentNo` saat dibuka dari `ShipmentDetailScreen`.
+  - `NotificationScreen` (`FR-NOT-01..05`): tambah pengingat kas operasional rendah (`FR-NOT-04`), seragamkan `ScreenHeader`, dan tambah aksi `Baca semua`.
+  - `app_theme.dart`: hapus alias token lama `navy`/`border` (`0 shortcut:` tersisa di seluruh `lib/`).
 - 2026-11-11 (v) — **Perbaiki resolusi aset lokal `Onest` di `google_fonts` + hapus dependensi mati**:
   - Audit sumber `google_fonts-8.2.1` (`findFamilyWithVariantAssetPath`) menemukan bahwa paket ini mencari berkas di `AssetManifest` berdasarkan nama varian API (`Onest-Regular.ttf`, `Onest-Medium.ttf`, `Onest-SemiBold.ttf`, `Onest-Bold.ttf`, `Onest-ExtraBold.ttf`), bukan `Onest-400..800.ttf`, serta mewajibkan folder `assets/fonts/` terdaftar di bawah `flutter: assets:` (bukan hanya `flutter: fonts:`).
   - Berkas di `app/assets/fonts/` diganti namanya sesuai konvensi `google_fonts`, `- assets/fonts/` ditambahkan ke `pubspec.yaml`, dan `GoogleFonts.config.allowRuntimeFetching = false` dikunci di `lib/main.dart` agar aplikasi tidak pernah mengunduh font saat runtime.

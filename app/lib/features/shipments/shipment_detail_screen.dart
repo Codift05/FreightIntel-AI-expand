@@ -44,6 +44,7 @@ class _ShipmentDetailScreenState extends State<ShipmentDetailScreen> {
       MaterialPageRoute(
         builder: (_) => RecordTransactionScreen(
           type: type,
+          initialShipmentNo: s.id,
           loadShipments: () =>
               repo.hasCache ? Future.value(repo.cached) : repo.fetchPage(0),
         ),
@@ -301,12 +302,12 @@ class _ShipmentDetailScreenState extends State<ShipmentDetailScreen> {
   }
 
   Widget _customFields() {
-    const fields = {
+    final fields = {
       'No. BL': 'MBL-2610-0291',
-      'Kontainer': '1 x 40ft HC',
+      'Kontainer': s.container,
       'Incoterm': 'CIF',
-      'ETD': '12 Okt 2026',
-      'ETA': '28 Okt 2026',
+      'ETD': s.etd,
+      'ETA': s.eta,
     };
     return AppCard(
       shadow: AppShadows.soft,

@@ -8,8 +8,24 @@ class Shipment {
   final String id, client, route, type, revenue, profit, status;
   final bool profitUp;
   final bool arsip;
-  const Shipment(this.id, this.client, this.route, this.type, this.revenue,
-      this.profit, this.profitUp, this.status, {this.arsip = false});
+  final String container;
+  final String etd;
+  final String eta;
+
+  const Shipment(
+    this.id,
+    this.client,
+    this.route,
+    this.type,
+    this.revenue,
+    this.profit,
+    this.profitUp,
+    this.status, {
+    this.arsip = false,
+    this.container = '1 x 40ft HC',
+    this.etd = '12 Okt 2026',
+    this.eta = '28 Okt 2026',
+  });
 
   Shipment copyWith({
     String? client,
@@ -17,6 +33,9 @@ class Shipment {
     String? type,
     String? status,
     bool? arsip,
+    String? container,
+    String? etd,
+    String? eta,
   }) =>
       Shipment(
         id,
@@ -28,6 +47,9 @@ class Shipment {
         profitUp,
         status ?? this.status,
         arsip: arsip ?? this.arsip,
+        container: container ?? this.container,
+        etd: etd ?? this.etd,
+        eta: eta ?? this.eta,
       );
 }
 

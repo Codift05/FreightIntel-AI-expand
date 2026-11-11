@@ -18,7 +18,7 @@ class EditShipmentScreen extends StatefulWidget {
 }
 
 class _EditShipmentScreenState extends State<EditShipmentScreen> {
-  late final TextEditingController _client, _asal, _tujuan;
+  late final TextEditingController _client, _asal, _tujuan, _container, _etd, _eta;
   late String _type, _status;
   late bool _arsip;
   bool _berubah = false;
@@ -33,10 +33,13 @@ class _EditShipmentScreenState extends State<EditShipmentScreen> {
     _client = TextEditingController(text: s.client);
     _asal = TextEditingController(text: r.first.trim());
     _tujuan = TextEditingController(text: r.length > 1 ? r[1].trim() : '');
+    _container = TextEditingController(text: s.container);
+    _etd = TextEditingController(text: s.etd);
+    _eta = TextEditingController(text: s.eta);
     _type = s.type;
     _status = s.status;
     _arsip = s.arsip;
-    for (final c in [_client, _asal, _tujuan]) {
+    for (final c in [_client, _asal, _tujuan, _container, _etd, _eta]) {
       c.addListener(() {
         if (!_berubah) setState(() => _berubah = true);
       });
@@ -45,7 +48,7 @@ class _EditShipmentScreenState extends State<EditShipmentScreen> {
 
   @override
   void dispose() {
-    for (final c in [_client, _asal, _tujuan]) {
+    for (final c in [_client, _asal, _tujuan, _container, _etd, _eta]) {
       c.dispose();
     }
     super.dispose();
@@ -63,6 +66,9 @@ class _EditShipmentScreenState extends State<EditShipmentScreen> {
       type: _type,
       status: _status,
       arsip: _arsip,
+      container: _container.text.trim(),
+      etd: _etd.text.trim(),
+      eta: _eta.text.trim(),
     );
     ShipmentRepository.instance.update(updated);
     Navigator.of(context).pop(updated);
@@ -145,6 +151,16 @@ class _EditShipmentScreenState extends State<EditShipmentScreen> {
                       Expanded(child: _field('Asal', _asal)),
                       const SizedBox(width: 12),
                       Expanded(child: _field('Tujuan', _tujuan)),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  _field('Kontainer / Kargo', _container),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(child: _field('Jadwal ETD', _etd)),
+                      const SizedBox(width: 12),
+                      Expanded(child: _field('Estimasi ETA', _eta)),
                     ],
                   ),
                   const SizedBox(height: 16),

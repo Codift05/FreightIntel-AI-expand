@@ -8,6 +8,8 @@ class Invoice {
   final String? counterparty, shipmentNo, category;
   final DateTime? invoiceDate;
   final int? dppRupiah, ppnRupiah, paidRupiah;
+  final String currency;
+  final int exchangeRate;
 
   const Invoice(
     this.no,
@@ -23,6 +25,8 @@ class Invoice {
     this.dppRupiah,
     this.ppnRupiah,
     this.paidRupiah,
+    this.currency = 'IDR',
+    this.exchangeRate = 1,
   });
 
   /// Nilai tagihan dalam juta (dari DPP, atau parse dari string amount).
@@ -40,6 +44,8 @@ class Invoice {
         dppRupiah: dppRupiah,
         ppnRupiah: ppnRupiah,
         paidRupiah: paidRupiah ?? this.paidRupiah,
+        currency: currency,
+        exchangeRate: exchangeRate,
       );
 }
 

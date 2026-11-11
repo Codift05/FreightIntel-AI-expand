@@ -31,10 +31,6 @@ class AppColors {
   static const lossSoft = Color(0xFFFCEAE6);
   static const warning = Color(0xFFE0A33E);
   static const warningSoft = Color(0xFFFCF3E2);
-
-  // shortcut: alias token lama agar layar yang belum di-redesign tetap kompilasi; hapus saat layar diperbarui
-  static const navy = ink;
-  static const border = line;
 }
 
 /// Kurva gerak bersama. Ease-out kuat (punchy) untuk elemen masuk/keluar,
