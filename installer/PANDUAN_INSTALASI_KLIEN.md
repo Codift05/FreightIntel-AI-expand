@@ -1,9 +1,14 @@
-# Panduan Instalasi & Review — FreightIntel AI (v1.0.0)
+# Panduan Instalasi & Review — FreightIntel AI (v1.0.1)
+
+> **Perubahan v1.0.1 (13 Nov 2026):** Dashboard kini menampilkan angka dari
+> server, bukan angka contoh. Saat aplikasi belum terhubung server, kini ada
+> penanda jelas "Angka contoh, belum terhubung server" di bawah sapaan, supaya
+> tidak tertukar dengan data sungguhan.
 ### Support Android (`.apk`) & iOS iPhone (`.ipa` via `xtool` + iOS Web App)
 
 Folder `installer/` ini berisi paket instalasi untuk **Android** dan **iOS (iPhone)**:
-1. **Android:** `FreightIntel-AI-v1.0.0-release.apk` (~59,7 MB)
-2. **iOS (iPhone Native `.ipa`):** `FreightIntel-AI-v1.0.0-iOS.ipa` (dibangun otomatis oleh GitHub Actions macOS & siap di-sign/install ke iPhone menggunakan **`xtool`** dengan akun Apple ID).
+1. **Android:** `FreightIntel-AI-v1.0.1-release.apk` (~59,7 MB)
+2. **iOS (iPhone Native `.ipa`):** `FreightIntel-AI-v1.0.1-iOS.ipa` (dibangun otomatis oleh GitHub Actions macOS & siap di-sign/install ke iPhone menggunakan **`xtool`** dengan akun Apple ID).
 
 ---
 
@@ -25,7 +30,7 @@ Dengan [`xtool`](https://github.com/xtool-org/xtool) yang sudah terpasang di Lin
 
 3. **Sign & Install `.ipa` ke iPhone:**
    ```bash
-   xtool install "installer/FreightIntel-AI-v1.0.0-iOS.ipa"
+   xtool install "installer/FreightIntel-AI-v1.0.1-iOS.ipa"
    ```
 4. **Aktifkan Developer Mode & Trust Sertifikat di iPhone:**
    - Buka **Settings (Pengaturan) $\to$ General (Umum) $\to$ VPN & Device Management**, pilih akun Apple ID Anda, lalu ketuk **Trust (Percayai)**.
@@ -37,7 +42,7 @@ Dengan [`xtool`](https://github.com/xtool-org/xtool) yang sudah terpasang di Lin
 ---
 
 ## B. Cara Install `.apk` di HP Android
-1. Unduh berkas **`FreightIntel-AI-v1.0.0-release.apk`** dari Google Drive ke HP Android.
+1. Unduh berkas **`FreightIntel-AI-v1.0.1-release.apk`** dari Google Drive ke HP Android.
 2. Ketuk berkas `.apk` yang sudah diunduh.
 3. Jika muncul peringatan keamanan *"Install unknown apps"* / *"Izinkan instalasi dari sumber ini"*, pilih **Setelan (Settings)** $\to$ aktifkan **Izinkan dari sumber ini** $\to$ ketuk **Install**.
 4. Jika muncul pop-up *Google Play Protect*, ketuk **Detail lainnya (More details)** $\to$ **Tetap install (Install anyway)**.

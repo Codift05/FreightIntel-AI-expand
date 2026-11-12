@@ -60,7 +60,13 @@ class ApiClient {
       accessToken = res['accessToken'] as String?;
       final user = res['user'];
       if (user is Map<String, dynamic>) {
-        companyId = user['companyId'] as String?;
+        // Backend mengirim perusahaan sebagai objek bersarang
+        // (`user.company.id`). Bentuk datar `user.companyId` tetap diterima
+        // supaya klien lama/baru sama-sama jalan.
+        final company = user['company'];
+        companyId = company is Map<String, dynamic>
+            ? company['id'] as String?
+            : user['companyId'] as String?;
       }
       return res;
     }
