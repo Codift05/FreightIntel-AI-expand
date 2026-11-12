@@ -171,6 +171,10 @@ export PDF/Excel benar-benar menghasilkan file.
 - Insight tab icon changed star → `lamp_charge`. Finance localized to ID.
 
 ## Changelog
+- 2026-11-12 (ab) — **Dukungan Penuh iOS (`.ipa` via GitHub Actions macOS + `xtool` di Linux & iOS Web App PWA)**:
+  - `lib/core/network/api_client.dart` & `pubspec.yaml`: migrasi dari `dart:io` ke `package:http` agar `ApiClient` berjalan lintas-platform di Android, iOS (`.ipa`), dan Web (Safari iOS PWA).
+  - `ios/Runner/Info.plist` & `web/index.html` + `web/manifest.json`: set `CFBundleDisplayName` ke `FreightIntel AI`, aktifkan `NSAllowsArbitraryLoads` di iOS, dan lengkapi metadata standalone PWA iOS.
+  - `.github/workflows/build-ios.yml`: workflow otomatis di `macos-latest` untuk mem-build `FreightIntel-AI-v1.0.0-iOS.ipa` (siap di-sign & install ke iPhone via `xtool install`) serta bundel Web App iOS.
 - 2026-11-12 (aa) — **Build Release APK (`installer/FreightIntel-AI-v1.0.0-release.apk`) + Pengaturan URL Server di Login**:
   - `ApiClient` & `LoginScreen`: tambah `setCustomBaseUrl()` dan sheet **"Alamat server API"** di halaman Login agar APK rilis yang dikirim ke klien bisa langsung berjalan mandiri (offline fallback) maupun diarahkan ke URL server publik/tunnel tanpa perlu *rebuild* APK.
   - `installer/`: buat folder khusus installer berisi `FreightIntel-AI-v1.0.0-release.apk` (`59,7 MB`) dan `PANDUAN_INSTALASI_KLIEN.md` untuk dibagikan via Google Drive.

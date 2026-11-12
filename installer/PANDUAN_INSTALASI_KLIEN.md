@@ -1,36 +1,54 @@
 # Panduan Instalasi & Review — FreightIntel AI (v1.0.0)
+### Support Android (`.apk`) & iOS iPhone (`.ipa` via `xtool` + iOS Web App)
 
-Berkas di dalam folder ini disiapkan untuk **review aplikasi FreightIntel AI**:
-- **Berkas Installer Android:** `FreightIntel-AI-v1.0.0-release.apk` (~59,7 MB)
-
----
-
-## 1. Kompatibilitas Perangkat (Android vs iOS)
-- **Android (HP & Tablet Android 6.0 ke atas):**
-  Dapat langsung meng-install berkas **`FreightIntel-AI-v1.0.0-release.apk`** dari Google Drive / WhatsApp.
-- **iPhone / iPad (iOS):**
-  Sistem operasi Apple (iOS) **tidak mendukung format `.apk`** (format `.apk` khusus Android, sedangkan iOS menggunakan `.ipa` via Apple TestFlight / App Store).
-  Jika tim klien menggunakan iPhone, review dapat dilakukan melalui:
-  1. Perangkat Android pendamping menggunakan berkas `.apk` ini, atau
-  2. Versi **Web App (PWA)** yang dibuka langsung melalui browser **Safari di iPhone** (tampilan dan alur 100% identik dengan aplikasi mobile).
+Folder `installer/` ini berisi paket instalasi untuk **Android** dan **iOS (iPhone)**:
+1. **Android:** `FreightIntel-AI-v1.0.0-release.apk` (~59,7 MB)
+2. **iOS (iPhone Native `.ipa`):** `FreightIntel-AI-v1.0.0-iOS.ipa` (dibangun otomatis oleh GitHub Actions macOS & siap di-sign/install ke iPhone menggunakan **`xtool`** dengan akun Apple ID).
 
 ---
 
-## 2. Cara Install `.apk` di HP Android
+## A. Cara Install di iPhone (iOS) Menggunakan `xtool`
+Dengan [`xtool`](https://github.com/xtool-org/xtool) yang sudah terpasang di Linux (`~/.local/bin/xtool`):
+
+1. **Login Akun Apple ID (cukup sekali):**
+   ```bash
+   xtool auth login
+   ```
+   *(Masukkan Apple ID & password akun iPhone, lalu masukkan kode 2FA yang muncul di layar iPhone).*
+
+2. **Hubungkan iPhone via Kabel USB:**
+   - Colok iPhone ke laptop dan ketuk **"Trust This Computer" (Percayai Komputer Ini)** di layar iPhone.
+   - Cek apakah iPhone sudah terbaca:
+     ```bash
+     xtool devices
+     ```
+
+3. **Sign & Install `.ipa` ke iPhone:**
+   ```bash
+   xtool install "installer/FreightIntel-AI-v1.0.0-iOS.ipa"
+   ```
+4. **Aktifkan Developer Mode & Trust Sertifikat di iPhone:**
+   - Buka **Settings (Pengaturan) $\to$ General (Umum) $\to$ VPN & Device Management**, pilih akun Apple ID Anda, lalu ketuk **Trust (Percayai)**.
+   - Jika memakai iOS 16+, buka **Settings $\to$ Privacy & Security $\to$ Developer Mode** lalu aktifkan.
+
+> **Alternatif Tanpa Kabel untuk iPhone Klien Jarak Jauh (Safari iOS PWA):**
+> Jika klien berada di luar kota dan menggunakan iPhone tanpa akses ke komputer, klien juga dapat membuka tautan **Web App iOS** di browser **Safari iPhone** $\to$ ketuk tombol **Share (Bagikan)** $\to$ pilih **Add to Home Screen (Tambahkan ke Layar Utama)**. Aplikasi akan terpasang di layar utama iPhone dan berjalan *full-screen* persis seperti aplikasi native.
+
+---
+
+## B. Cara Install `.apk` di HP Android
 1. Unduh berkas **`FreightIntel-AI-v1.0.0-release.apk`** dari Google Drive ke HP Android.
 2. Ketuk berkas `.apk` yang sudah diunduh.
-3. Jika muncul peringatan keamanan *"Install unknown apps"* / *"Izinkan instalasi dari sumber ini"*, pilih **Setelan (Settings)** $\to$ aktifkan **Izinkan dari sumber ini (Allow from this source)** $\to$ ketuk **Install**.
-4. Jika muncul pop-up *Google Play Protect* (karena aplikasi belum dipublikasikan ke Play Store publik), ketuk **Detail lainnya (More details)** $\to$ **Tetap install (Install anyway)**.
-5. Setelah terpasang, buka aplikasi **FreightIntel AI**.
+3. Jika muncul peringatan keamanan *"Install unknown apps"* / *"Izinkan instalasi dari sumber ini"*, pilih **Setelan (Settings)** $\to$ aktifkan **Izinkan dari sumber ini** $\to$ ketuk **Install**.
+4. Jika muncul pop-up *Google Play Protect*, ketuk **Detail lainnya (More details)** $\to$ **Tetap install (Install anyway)**.
 
 ---
 
-## 3. Cara Masuk & Menjelajahi Aplikasi
-1. Pada halaman **Login**, akun demo sudah terisi otomatis:
+## C. Cara Masuk & Menjelajahi Aplikasi
+1. Pada halaman **Login**, akun bawaan sudah terisi otomatis:
    - **Email:** `owner@nusantara.co.id`
    - **Password:** `demo1234`
 2. Langsung ketuk tombol **Masuk** berwarna *lime*.
-3. **Mode Mandiri (Offline-Ready):**
-   Aplikasi dapat langsung digunakan penuh di mana saja tanpa perlu konfigurasi server. Seluruh 24 layar (Dashboard, Shipments, Buat/Ubah Shipment, Detail P&L, Keuangan Multi-Mata Uang, Cicilan Pembayaran, Scan Invoice, Laporan Keuangan, Analitik Customer & Vendor, Insight AI, Tanya AI, Notifikasi, serta Pengaturan & Pindah Perusahaan) siap dicoba.
-4. **Mode Terhubung Server / Live Database (Opsional saat Sesi Demo):**
-   Jika tim pengembang sedang menyalakan server *tunnel* / *cloud* untuk sesi *live database*, ketuk tulisan **"Ketuk untuk atur server"** di bawah tombol Masuk pada halaman Login, masukkan URL server yang diberikan, lalu ketuk **Simpan alamat server**.
+3. **Mode Mandiri (Offline-Ready) vs Server:**
+   - Aplikasi langsung berjalan penuh tanpa konfigurasi tambahan.
+   - Untuk menyambungkan ke server/database live, ketuk **"Ketuk untuk atur server"** di bawah tombol Masuk pada halaman Login.

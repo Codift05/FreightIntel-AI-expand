@@ -1,15 +1,17 @@
 import 'dart:convert';
-import 'dart:io';
+import 'package:http/http.dart' as http;
 
-/// HTTP client ringan berbasis `dart:io` menuju backend NestJS (`/api/v1`).
+/// HTTP client lintas-platform (Android, iOS `.ipa`, & Web/Safari iOS PWA)
+/// berbasis `package:http` menuju backend NestJS (`/api/v1`).
 ///
 /// Menangani:
-/// - Resolusi host otomatis: `127.0.0.1:4100` (desktop / `adb reverse` HP fisik
-///   atau emulator) dan `10.0.2.2:4100` (Android emulator default bridge).
+/// - Resolusi host otomatis: `127.0.0.1:4100` (desktop / iOS / `adb reverse`)
+///   dan `10.0.2.2:4100` (Android emulator default bridge), atau URL server
+///   kustom yang diatur lewat layar Login.
 /// - Header `x-company-id` untuk isolasi multi-perusahaan (PRD BR-10).
-/// - Timeout cepat (`1200ms`) agar saat peranti benar-benar offline (mis. HP uji
-///   tanpa internet/USB), repository langsung jatuh ke data fallback tanpa jeda
-///   panjang.
+/// - Timeout cepat (`1500ms`) agar saat peranti benar-benar offline (mis. HP
+///   klien tanpa koneksi ke server), repository langsung jatuh ke data
+///   fallback tanpa jeda panjang.
 class ApiClient {
   ApiClient._();
   static final instance = ApiClient._();
@@ -78,44 +80,40 @@ class ApiClient {
           ]
         : _candidates;
 
+    final headers = <String, String>{
+      'Accept': 'application/json',
+      if (companyId != null && companyId!.isNotEmpty)
+        'x-company-id': companyId!,
+      if (accessToken != null && accessToken!.isNotEmpty)
+        'Authorization': 'Bearer $accessToken',
+      if (body != null) 'Content-Type': 'application/json; charset=utf-8',
+    };
+    final encodedBody = body != null ? jsonEncode(body) : null;
+
     for (final base in bases) {
-      final client = HttpClient()
-        ..connectionTimeout = const Duration(milliseconds: 1200);
       try {
         var uri = Uri.parse('$base$path');
         if (query != null && query.isNotEmpty) {
           uri = uri.replace(queryParameters: query);
         }
-        final req = await client
-            .openUrl(method, uri)
-            .timeout(const Duration(milliseconds: 1800));
-        req.headers.set(HttpHeaders.acceptHeader, 'application/json');
-        if (companyId != null && companyId!.isNotEmpty) {
-          req.headers.set('x-company-id', companyId!);
-        }
-        if (accessToken != null && accessToken!.isNotEmpty) {
-          req.headers
-              .set(HttpHeaders.authorizationHeader, 'Bearer $accessToken');
-        }
-        if (body != null) {
-          final encoded = utf8.encode(jsonEncode(body));
-          req.headers.set(
-              HttpHeaders.contentTypeHeader, 'application/json; charset=utf-8');
-          req.contentLength = encoded.length;
-          req.add(encoded);
-        }
-        final res =
-            await req.close().timeout(const Duration(milliseconds: 2500));
-        final text = await res.transform(utf8.decoder).join();
+        const timeout = Duration(milliseconds: 1500);
+        final http.Response res = switch (method) {
+          'POST' => await http
+              .post(uri, headers: headers, body: encodedBody)
+              .timeout(timeout),
+          'PATCH' => await http
+              .patch(uri, headers: headers, body: encodedBody)
+              .timeout(timeout),
+          _ => await http.get(uri, headers: headers).timeout(timeout),
+        };
         if (res.statusCode >= 200 && res.statusCode < 300) {
           _resolvedBase = base;
           lastCallOnline = true;
+          final text = utf8.decode(res.bodyBytes);
           return text.isEmpty ? null : jsonDecode(text);
         }
       } catch (_) {
         // Coba kandidat berikutnya atau jatuh ke offline fallback di repository.
-      } finally {
-        client.close(force: true);
       }
     }
     lastCallOnline = false;

@@ -36,5 +36,6 @@ backend/dist/
 backend/.pgdata/
 backend/.env
 
-# Binary installer APK (disimpan lokal untuk Google Drive klien)
+# Binary installer APK & IPA (disimpan lokal untuk Google Drive / xtool iPhone)
 installer/*.apk
+installer/*.ipa
