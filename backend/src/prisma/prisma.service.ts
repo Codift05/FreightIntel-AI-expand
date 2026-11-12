@@ -1,4 +1,4 @@
-import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
+import { Injectable, OnModuleInit, OnModuleDestroy, ForbiddenException } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
 
 @Injectable()
@@ -20,8 +20,12 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
       const exists = await this.company.findUnique({ where: { id: headerCompanyId } });
       if (exists) return exists.id;
     }
-    const first = await this.company.findFirst({ orderBy: { createdAt: 'asc' } });
-    if (!first) throw new Error('Belum ada data perusahaan di database.');
-    return first.id;
+    // Tidak ada fallback diam-diam ke perusahaan pertama. Sebelumnya baris ini
+    // membuat permintaan tanpa konteks tetap membaca data perusahaan nyata,
+    // sehingga kebocoran tidak terlihat. Konteks perusahaan kini selalu diisi
+    // JwtAuthGuard dari dalam token; bila kosong berarti ada yang salah.
+    throw new ForbiddenException(
+      'Konteks perusahaan tidak ditemukan pada token. Silakan masuk ulang.',
+    );
   }
 }

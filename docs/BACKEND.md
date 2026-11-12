@@ -75,7 +75,7 @@ npm --prefix backend run start:dev
 
 ## 5. Celah terbuka (temuan audit 13 Nov 2026)
 
-### 5.1 Seluruh endpoint tidak terproteksi (PRIORITAS TERTINGGI)
+### 5.1 Seluruh endpoint tidak terproteksi — ✅ DITUTUP 13 Nov 2026
 `POST /auth/login` **sudah** menerbitkan JWT sungguhan
 (`jwt.signAsync`, `auth.service.ts:57`), dan aplikasi **sudah** mengirim
 `Authorization: Bearer <token>` + `x-company-id` di setiap permintaan
@@ -100,6 +100,35 @@ itulah celah ini berubah dari risiko lokal menjadi kebocoran data nyata.
 Sisi klien sudah siap: token dan header perusahaan sudah dikirim, jadi
 menambahkan guard + mengambil `companyId` dari token (bukan dari header yang
 bisa dipalsukan) tidak perlu mengubah aplikasi.
+
+**Perbaikan yang diterapkan:**
+- `src/auth/jwt-auth.guard.ts` (baru) — `JwtAuthGuard` memverifikasi
+  `Authorization: Bearer`, lalu **menimpa** `x-company-id` dengan `companyId`
+  dari dalam token. Header klien tidak lagi dipercaya, dan seluruh controller
+  yang membaca header itu tidak perlu diubah sama sekali.
+- `src/auth/public.decorator.ts` (baru) — `@Public()` untuk rute terbuka.
+- `app.module.ts` — guard dipasang global lewat `APP_GUARD`. Hanya
+  `POST /auth/login` dan `GET /health` yang `@Public()`.
+- `prisma.service.ts` — `resolveCompanyId()` **tidak lagi** jatuh ke
+  perusahaan pertama bila konteks kosong; sekarang melempar
+  `ForbiddenException`. Fallback diam itulah yang membuat kebocoran tak
+  terlihat.
+- `test/verify-api.ts` — seluruh permintaan kini membawa token.
+
+**Hasil uji:**
+```
+TANPA token: /dashboard /finance/invoices /settings/overview
+             /shipments /customers        -> HTTP 401
+PUBLIK     : /health                      -> HTTP 200
+DENGAN token: /dashboard                  -> HTTP 200
+x-company-id dipalsukan ke perusahaan lain -> diabaikan, tetap profitJt=1254
+Suite integrasi                            -> 9/9 LULUS
+Aplikasi di emulator                       -> tetap menampilkan data server
+```
+
+**Belum tercakup (lanjutan):** pengecekan izin per-peran per-modul
+(FR-USR-04) belum ada — token yang sah saat ini boleh mengakses semua
+modul. Super Admin lintas-perusahaan (FR-USR-07) juga belum.
 
 ### 5.2 Belum ada endpoint laporan
 `FR-RPT-03/04` (export PDF & Excel) adalah **MUST** di PRD, tetapi tidak ada

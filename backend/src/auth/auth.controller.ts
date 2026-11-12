@@ -1,5 +1,6 @@
 import { Body, Controller, Get, Headers, Post } from '@nestjs/common';
 import { AuthService } from './auth.service';
+import { Public } from './public.decorator';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Controller('auth')
@@ -9,6 +10,7 @@ export class AuthController {
     private readonly prisma: PrismaService,
   ) {}
 
+  @Public()
   @Post('login')
   async login(@Body() body: { email?: string; password?: string }) {
     const email = body.email || 'owner@nusantara.co.id';

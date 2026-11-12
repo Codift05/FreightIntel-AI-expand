@@ -161,6 +161,12 @@ Penjelasan lengkap di `app/DESIGN.md`. Yang paling sering dilanggar agent:
   simpan sebagai `installer/FreightIntel-AI-v1.0.1-iOS.ipa` -> user memasang
   ke iPhone-nya sendiri dengan `xtool install`. **`.ipa` tidak bisa dibangun
   dari mesin Linux ini.** Lihat `installer/PANDUAN_INSTALASI_KLIEN.md`.
+- **Seluruh rute backend wajib token** sejak 13 Nov 2026 (`JwtAuthGuard` global
+  via `APP_GUARD`). Rute baru otomatis ikut terlindungi; pakai `@Public()`
+  hanya bila memang harus terbuka. **Konteks perusahaan diambil dari token**,
+  bukan dari header `x-company-id` (guard menimpanya), jadi jangan percaya
+  header itu. `resolveCompanyId()` melempar `ForbiddenException` bila konteks
+  kosong - jangan kembalikan fallback "perusahaan pertama".
 - **Build klien di `installer/`**: APK dibangun lokal
   (`flutter build apk --release`), `.ipa` **hanya** dari GitHub Actions
   (`.github/workflows/build-ios.yml`, terpicu saat push). Setiap perbaikan yang
