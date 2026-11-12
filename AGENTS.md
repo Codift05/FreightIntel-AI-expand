@@ -161,6 +161,15 @@ Penjelasan lengkap di `app/DESIGN.md`. Yang paling sering dilanggar agent:
   simpan sebagai `installer/FreightIntel-AI-v1.0.1-iOS.ipa` -> user memasang
   ke iPhone-nya sendiri dengan `xtool install`. **`.ipa` tidak bisa dibangun
   dari mesin Linux ini.** Lihat `installer/PANDUAN_INSTALASI_KLIEN.md`.
+- **`am force-stop` membuang kode hasil hot reload/restart.** Setelah
+  force-stop, emulator menjalankan APK hasil **install terakhir**, bukan kode
+  terbaru - pernah membuat satu jam terbuang mengira perbaikan tidak bekerja.
+  Untuk menguji kode terbaru dari kondisi dingin: jalankan ulang `flutter run`
+  (install ulang), jangan force-stop lalu buka dari launcher.
+- **Rute yang tidak ada tidak melewati guard**, jadi tidak muncul di log guard.
+  Kalau sebuah permintaan "hilang" dari log, curigai path-nya salah.
+- **Izin per-peran ditegakkan server** (`PermissionsGuard`, FR-USR-04). Rute
+  baru yang menyentuh data modul harus diberi `@RequirePermission('MODUL_AKSI')`.
 - **Seluruh rute backend wajib token** sejak 13 Nov 2026 (`JwtAuthGuard` global
   via `APP_GUARD`). Rute baru otomatis ikut terlindungi; pakai `@Public()`
   hanya bila memang harus terbuka. **Konteks perusahaan diambil dari token**,

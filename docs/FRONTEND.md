@@ -175,6 +175,15 @@ export PDF/Excel benar-benar menghasilkan file.
 - Insight tab icon changed star → `lamp_charge`. Finance localized to ID.
 
 ## Changelog
+- 2026-11-13 (x) — **RBAC ditegakkan di server (FR-USR-04)**. Rinciannya di
+  `docs/BACKEND.md` 5.4. Dampak ke frontend: bila server membalas `403`,
+  repository saat ini **diam-diam jatuh ke data contoh**. Dashboard sudah
+  punya penanda "Angka contoh, belum terhubung server", tetapi layar lain
+  belum - idealnya menampilkan "Anda tidak punya akses ke modul ini".
+  Dicatat sebagai utang, belum dikerjakan.
+  - Verifikasi akhir di emulator dengan **install ulang** (bukan hot restart):
+    layar menampilkan `profit=1570 jt margin=34,1% shipment=20`, identik
+    dengan `GET /dashboard?period=monthly`.
 - 2026-11-13 (w) — **Dashboard akhirnya memakai data server + penanda jujur
   saat fallback** (temuan dari audit menyeluruh frontend<->backend).
   - **Bug 1 (utama): Dashboard selalu menampilkan angka contoh.** App memanggil

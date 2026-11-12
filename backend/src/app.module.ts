@@ -8,6 +8,7 @@ import { DashboardModule } from './dashboard/dashboard.module';
 import { AnalyticsModule } from './analytics/analytics.module';
 import { PrismaService } from './prisma/prisma.service';
 import { JwtAuthGuard } from './auth/jwt-auth.guard';
+import { PermissionsGuard } from './auth/permissions.guard';
 import { Public } from './auth/public.decorator';
 
 @Controller('health')
@@ -40,7 +41,12 @@ export class HealthController {
     AnalyticsModule,
   ],
   controllers: [HealthController],
-  // Guard global: seluruh rute wajib token kecuali yang ditandai @Public().
-  providers: [{ provide: APP_GUARD, useClass: JwtAuthGuard }],
+  // Guard global, dijalankan berurutan:
+  // 1) JwtAuthGuard  - wajib token kecuali rute @Public()
+  // 2) PermissionsGuard - cek izin peran bila rute memakai @RequirePermission()
+  providers: [
+    { provide: APP_GUARD, useClass: JwtAuthGuard },
+    { provide: APP_GUARD, useClass: PermissionsGuard },
+  ],
 })
 export class AppModule {}

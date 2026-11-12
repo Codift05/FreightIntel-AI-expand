@@ -137,3 +137,38 @@ fitur ini aktif setelah backend siap.
 
 ### 5.3 OCR invoice belum ada di backend
 `FR-OCR` masih simulasi di sisi aplikasi; belum ada endpoint unggah/ekstraksi.
+
+### 5.4 Izin per-peran per-modul (FR-USR-04) — ✅ DITUTUP 13 Nov 2026
+
+`PermissionsGuard` global menegakkan izin di server, melengkapi `JwtAuthGuard`.
+
+- `src/auth/permissions.decorator.ts` — `@RequirePermission('SHIPMENT_BUAT')`.
+  Kode mengikuti kolom `permissions.code`: `MODUL_AKSI`, dengan modul
+  `DASHBOARD | SHIPMENT | REVENUE | COST | LAPORAN | CUSTOMER | PENGATURAN`
+  dan aksi `LIHAT | BUAT | UBAH | HAPUS`. Beberapa kode = cukup punya salah satu.
+- `src/auth/permissions.guard.ts` — izin **tidak** ditanam di token, melainkan
+  dibaca dari basis data dengan cache memori TTL 30 detik. Alasannya: perubahan
+  lewat layar "Peran & izin" langsung berlaku tanpa pengguna masuk ulang.
+  Guard juga menolak akun yang sudah dinonaktifkan (`isActive = false`).
+- Rute tanpa `@RequirePermission` tetap terbuka bagi siapa pun yang sudah masuk
+  (mis. `/notifications`, milik pengguna itu sendiri).
+
+**Hasil uji lima peran bawaan:**
+
+| Peran | `/dashboard` | `/settings/overview` | `/customers` | `/finance/invoices` |
+|---|---|---|---|---|
+| Owner | 200 | 200 | 200 | 200 |
+| Finance | 200 | 200 | 200 | 200 |
+| Operasional | 200 | **403** | **403** | **403** |
+| Sales | 200 | **403** | 200 | 200 |
+| Staff | 200 | **403** | **403** | **403** |
+
+Suite integrasi tetap 9/9 lulus.
+
+**Catatan:** peran Finance saat ini punya `PENGATURAN_LIHAT` sehingga bisa
+membuka Pengaturan. Itu keputusan data seed, bukan bug guard — ubah lewat
+layar "Peran & izin" bila tidak dikehendaki.
+
+**Lanjutan di sisi aplikasi:** bila server membalas `403`, repository Flutter
+saat ini diam-diam jatuh ke data contoh. Idealnya layar menampilkan
+"Anda tidak punya akses ke modul ini", bukan angka contoh.
