@@ -6,6 +6,9 @@ on:
       - "**"
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build-ios-ipa:
     name: Build iOS IPA (for xtool install on iPhone)
@@ -42,6 +45,13 @@ jobs:
           name: FreightIntel-AI-v1.0.0-iOS-ipa
           path: app/build/ios/ipa_out/FreightIntel-AI-v1.0.0-iOS.ipa
           if-no-files-found: error
+
+      - name: Publish .ipa to GitHub Release v1.0.0
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.0.0
+          name: "FreightIntel AI v1.0.0 (iOS IPA & Android)"
+          files: app/build/ios/ipa_out/FreightIntel-AI-v1.0.0-iOS.ipa
 
   build-ios-webapp:
     name: Build iOS Safari Web App (PWA)
