@@ -1,0 +1,32 @@
+name: freightintel
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: freightintel-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: freightintel
+      POSTGRES_PASSWORD: freightintel_dev_password
+      POSTGRES_DB: freightintel_db
+      TZ: Asia/Jakarta
+    ports:
+      - "127.0.0.1:5439:5432"
+    volumes:
+      - freightintel-pgdata:/var/lib/postgresql/data
+    networks:
+      - freightintel-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U freightintel -d freightintel_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  freightintel-pgdata:
+    name: freightintel-pgdata
+
+networks:
+  freightintel-net:
+    name: freightintel-net
+    driver: bridge

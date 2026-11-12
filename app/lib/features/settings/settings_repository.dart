@@ -1,6 +1,10 @@
-// Data layer Pengaturan (demo, in-memory). Perubahan hilang saat app ditutup.
-// Ganti dengan call API saat backend siap. Semua data terikat satu perusahaan
-// aktif (BR isolasi data antar perusahaan, FR-CMP-05).
+import '../../core/network/api_client.dart';
+import '../finance/finance_repository.dart';
+import '../shipments/shipment_repository.dart';
+
+// Data layer Pengaturan: sinkronisasi dengan backend NestJS (`GET /api/v1/settings/overview`)
+// serta fallback ke data demo in-memory saat offline. Semua data terikat satu
+// perusahaan aktif (BR-10 isolasi data antar perusahaan, FR-CMP-05).
 
 class Company {
   final String id, nama, npwp, alamat, mataUang;
@@ -135,12 +139,126 @@ class SettingsRepository {
     ),
   ];
   String activeCompanyId = 'c1';
-  Company get active =>
-      companies.firstWhere((c) => c.id == activeCompanyId);
+  Company get active => companies.firstWhere(
+        (c) => c.id == activeCompanyId,
+        orElse: () => companies.first,
+      );
 
   void updateActive(Company c) {
     final i = companies.indexWhere((e) => e.id == c.id);
     if (i >= 0) companies[i] = c;
+    ApiClient.instance.patch('/settings/company', body: {
+      'name': c.nama,
+      'npwp': c.npwp,
+      'address': c.alamat,
+      'baseCurrency': c.mataUang,
+      'vatRate': c.ppnPersen,
+    });
+  }
+
+  void addBranch(Branch b) {
+    branches.add(b);
+    ApiClient.instance.post('/settings/branches', body: {
+      'name': b.nama,
+      'city': b.kota,
+    });
+  }
+
+  void addUser(AppUser u) {
+    users.add(u);
+    ApiClient.instance.post('/settings/users', body: {
+      'name': u.nama,
+      'email': u.email,
+      'roleName': u.peran,
+      'branchName': u.cabang,
+    });
+  }
+
+  void addCustomField(CustomField f) {
+    fields.add(f);
+    ApiClient.instance.post('/settings/custom-fields', body: {
+      'name': f.nama,
+      'targetModule': f.target,
+      'fieldType': f.tipe.label,
+      'isRequired': f.wajib,
+    });
+  }
+
+  /// Pindah perusahaan aktif (FR-CMP-06 & BR-10): perbarui header `x-company-id`
+  /// dan bersihkan cache repository agar seluruh layar memuat data perusahaan baru.
+  Future<void> switchCompany(String companyId) async {
+    activeCompanyId = companyId;
+    ApiClient.instance.companyId = companyId;
+    ShipmentRepository.instance.clearCache();
+    FinanceRepository.instance.clearCache();
+    await syncFromBackend();
+  }
+
+  /// Sinkronisasi data perusahaan, cabang, pengguna, dan log audit dari backend.
+  Future<void> syncFromBackend() async {
+    final res = await ApiClient.instance.get('/settings/overview');
+    if (res is! Map<String, dynamic>) return;
+
+    final rawCompanies = res['companies'];
+    if (rawCompanies is List && rawCompanies.isNotEmpty) {
+      companies
+        ..clear()
+        ..addAll(rawCompanies.whereType<Map<String, dynamic>>().map((c) => Company(
+              id: (c['id'] ?? 'c1') as String,
+              nama: (c['name'] ?? 'PT Nusantara Freight') as String,
+              npwp: (c['npwp'] ?? '') as String,
+              alamat: (c['address'] ?? '') as String,
+              mataUang: (c['baseCurrency'] ?? 'IDR') as String,
+              ppnPersen:
+                  ((c['ppnPct'] ?? c['vatRate']) as num?)?.toDouble() ?? 11,
+            )));
+      final backendActive = res['activeCompanyId'] as String?;
+      if (backendActive != null &&
+          companies.any((c) => c.id == backendActive)) {
+        activeCompanyId = backendActive;
+        ApiClient.instance.companyId = backendActive;
+      }
+    }
+
+    final rawBranches = res['branches'];
+    if (rawBranches is List && rawBranches.isNotEmpty) {
+      branches
+        ..clear()
+        ..addAll(rawBranches.whereType<Map<String, dynamic>>().map((b) => Branch(
+              (b['name'] ?? '') as String,
+              (b['city'] ?? '') as String,
+              pusat: (b['isHeadOffice'] as bool?) ?? false,
+              pengguna: (b['staffCount'] as num?)?.toInt() ?? 0,
+            )));
+    }
+
+    final rawUsers = res['users'];
+    if (rawUsers is List && rawUsers.isNotEmpty) {
+      users
+        ..clear()
+        ..addAll(rawUsers.whereType<Map<String, dynamic>>().map((u) => AppUser(
+              (u['name'] ?? '') as String,
+              (u['email'] ?? '') as String,
+              (u['role'] ?? 'Staff') as String,
+              (u['branch'] ?? 'Kantor Pusat') as String,
+              aktif: (u['aktif'] as bool?) ?? true,
+            )));
+    }
+
+    final rawLogs = res['auditLogs'];
+    if (rawLogs is List && rawLogs.isNotEmpty) {
+      _syncedLogs = rawLogs.whereType<Map<String, dynamic>>().map((l) {
+        final createdAt = l['createdAt'] is String
+            ? DateTime.tryParse(l['createdAt'] as String)
+            : null;
+        return ActivityEntry(
+          (l['actorName'] ?? 'Sistem') as String,
+          (l['action'] ?? '') as String,
+          (l['target'] ?? '') as String,
+          createdAt ?? DateTime.now(),
+        );
+      }).toList();
+    }
   }
 
   final List<Branch> branches = [
@@ -205,7 +323,11 @@ class SettingsRepository {
   ];
 
   // --- Log aktivitas (FR-USR-06) ------------------------------------------
-  List<ActivityEntry> get activity => [
+  List<ActivityEntry>? _syncedLogs;
+
+  List<ActivityEntry> get activity =>
+      _syncedLogs ??
+      [
         ActivityEntry('Rina Wijaya', 'Catat pembayaran',
             'INV/2610/009 · Rp 40 jt', DateTime(2026, 11, 10, 9, 42)),
         ActivityEntry('Agus Pratama', 'Ubah status shipment',

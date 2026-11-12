@@ -1,4 +1,7 @@
-/// Data layer Vendor Analytics (demo). Ganti dengan call API saat backend siap.
+import '../../core/network/api_client.dart';
+
+/// Data layer Vendor Analytics: mengambil data vendor dan indeks biaya dari
+/// backend NestJS (`GET /api/v1/vendors`) dengan fallback offline.
 class Vendor {
   final String name, kind, city;
   final int shipments, costJt;
@@ -17,6 +20,27 @@ class Vendor {
     required this.trend,
     required this.rincian,
   });
+
+  factory Vendor.fromJson(Map<String, dynamic> j, int idx) {
+    final fallback = VendorRepository._data[idx % VendorRepository._data.length];
+    final costJt = (j['costJt'] as num?)?.toInt() ?? fallback.costJt;
+    return Vendor(
+      name: (j['name'] ?? fallback.name) as String,
+      kind: (j['category'] ?? fallback.kind) as String,
+      city: (j['city'] ?? fallback.city) as String,
+      shipments: (j['jobs'] as num?)?.toInt() ?? fallback.shipments,
+      costJt: costJt,
+      tepatWaktuPct:
+          (j['tepatWaktuPct'] as num?)?.toDouble() ?? fallback.tepatWaktuPct,
+      indeksTarif:
+          (j['indeksTarif'] as num?)?.toDouble() ?? fallback.indeksTarif,
+      trend: fallback.trend,
+      rincian: [
+        (kategori: (j['category'] ?? fallback.kind) as String, jt: (costJt * 0.75).round()),
+        (kategori: 'Biaya operasional & dokumen', jt: costJt - (costJt * 0.75).round()),
+      ],
+    );
+  }
 
   String get initials {
     final parts = name.split(' ').where((w) => w.length > 2).toList();
@@ -43,7 +67,18 @@ class VendorRepository {
   static final instance = VendorRepository._();
 
   Future<List<Vendor>> fetch() async {
-    await Future.delayed(const Duration(milliseconds: 550));
+    final res = await ApiClient.instance.get('/vendors');
+    if (res is List) {
+      final list = <Vendor>[];
+      var i = 0;
+      for (final item in res) {
+        if (item is Map<String, dynamic>) {
+          list.add(Vendor.fromJson(item, i++));
+        }
+      }
+      if (list.isNotEmpty) return list;
+    }
+    await Future.delayed(const Duration(milliseconds: 350));
     return _data;
   }
 

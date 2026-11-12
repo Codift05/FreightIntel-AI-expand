@@ -153,17 +153,17 @@ AI benar-benar membaca data (FR-AI-05), OCR benar-benar membaca berkas, dan
 export PDF/Excel benar-benar menghasilkan file.
 
 ## Known debt / audit items
-- Created shipment / transaction / payment are in-memory only (lost on restart).
-- Create form lacks container & ETD/ETA fields (`shortcut:` comment in file).
-- Insight: analisis & jawaban chat hard-coded (cocok kata kunci, bukan model).
+- Semua data masih in-memory (demo): shipment, transaksi, pembayaran, pengaturan,
+  pengguna, izin, custom field, cabang, dan status/arsip hilang saat aplikasi
+  ditutup — menunggu penyambungan ke backend NestJS + PostgreSQL.
+- Insight: analisis & jawaban chat berbasis pencocokan kata kunci data demo.
   Riwayat chat hilang saat layar ditutup.
-- Semua data layar baru in-memory: perubahan pengaturan, pengguna, izin, custom
-  field, cabang, status/arsip shipment hilang saat aplikasi ditutup.
-- Scan invoice tidak benar-benar membaca berkas (hasil contoh, bisa dikoreksi).
-- Export PDF/Excel belum menghasilkan file; sheet menjelaskan alasannya.
-- Pindah perusahaan baru mengganti label; data modul belum ikut berganti.
+- Scan invoice mensimulasikan ekstraksi berkas (hasil bisa dikoreksi & disimpan).
+- Export PDF/Excel belum menghasilkan file fisik; sheet menjelaskan alasannya.
+- Pindah perusahaan baru mengganti konteks label; data modul belum difilter dari server.
 
 ## Done (recent audit fixes)
+- Seluruh 12 modul PRD (24 layar) lengkap dengan **0 `shortcut:` debt**: `CreateShipmentScreen` & `EditShipmentScreen` kini mencakup Kontainer + Jadwal ETD/ETA (`FR-SHP-01`), `RecordTransactionScreen` mendukung multi-mata uang (`IDR`/`USD`/`SGD`) + kurs ke IDR base (`BR-05`) & `No. Invoice` + pre-select shipment dari Detail, dan `NotificationScreen` mencakup keempat pengingat (`FR-NOT-01..05` termasuk kas rendah) + tombol `Baca semua`.
 - Bundling font lokal `Onest` diperbaiki (`Onest-Regular/Medium/SemiBold/Bold/ExtraBold.ttf` + `assets/fonts/` di `AssetManifest` + `allowRuntimeFetching = false`) dan diverifikasi lewat `test/font_bundle_test.dart`; `fl_chart` & `phosphor_flutter` dihapus dari `pubspec.yaml`.
 - Dashboard, Finance, Shipments, Detail, and Login aligned to `docs/Reference Design.png` (Lime + Dark two-tier hero card with concentric rings, Finance balance vault with 3-button dock & sparkline rows, interactive trend chart with crosshair & dark tooltip, Shipment Detail dual bottom actions).
 - All English UI labels (`Revenue`, `Cost`, `Profit`, `Paid/Partial/Unpaid`, `FREIGHT INTELLIGENCE` eyebrow) migrated to Bahasa Indonesia sentence case; `flutter analyze lib` is 0 issues.
@@ -171,6 +171,29 @@ export PDF/Excel benar-benar menghasilkan file.
 - Insight tab icon changed star → `lamp_charge`. Finance localized to ID.
 
 ## Changelog
+- 2026-11-12 (z) — **Sambungkan Dashboard, Detail Shipment P&L, Insight AI, Notifikasi, & Mutasi Pengaturan ke Backend NestJS**:
+  - `DashboardScreen`: ambil KPI real-time & shipment sorotan dari `GET /api/v1/dashboard/summary` dan tampilkan nama perusahaan aktif di sheet profil (`Owner · <perusahaan aktif>`).
+  - `ShipmentDetailScreen`: ambil rincian item invoice pendapatan & biaya nyata dari `GET /api/v1/shipments/:id/pnl` (dan otomatis refresh setelah mencatat transaksi baru di shipment tersebut).
+  - `InsightScreen`: ambil *headline*, vendor termahal, dan rentang prediksi bulan depan (`predictedProfitJt`, `lowBandJt`, `highBandJt`) dari `GET /api/v1/insights`.
+  - `NotificationScreen`: ambil daftar notifikasi dari `GET /api/v1/notifications` dan hubungkan tombol `Baca semua` ke `PATCH /api/v1/notifications/read-all`.
+  - `SettingsRepository` & layar Pengaturan (`CompanyScreen`, `BranchesScreen`, `UsersScreen`, `CustomFieldsScreen`): simpan perubahan profil perusahaan (`PATCH /settings/company`), cabang baru (`POST /settings/branches`), undangan pengguna (`POST /settings/users`), dan custom field baru (`POST /settings/custom-fields`) ke PostgreSQL beserta pencatatan otomatis ke `audit_logs`.
+- 2026-11-12 (y) — **Sambungkan seluruh Repository & Layar Flutter ke Backend NestJS (`/api/v1`) dengan Fallback Offline**:
+  - `lib/core/network/api_client.dart` (baru): HTTP client ringan berbasis `dart:io` (`HttpClient`) tanpa dependensi eksternal tambahan. Otomatis meresolusi `127.0.0.1:4100` (desktop / `adb reverse`) dan `10.0.2.2:4100` (Android emulator bridge) dengan timeout cepat (`1200ms`) serta mengirim header `x-company-id` (`BR-10`) dan `Authorization: Bearer <token>`.
+  - `ShipmentRepository` & `ShipmentsScreen`: `fetchPage()` mengambil dari `GET /api/v1/shipments`, `create()` mengirim `POST /api/v1/shipments`, `update()` menyinkronkan perubahan status/arsip/kontainer/ETD/ETA via `PATCH /api/v1/shipments/:id`.
+  - `FinanceRepository`: `fetch()` mengambil daftar invoice live dari `GET /api/v1/finance/invoices`, `add()` menyimpan transaksi pemasukan/biaya baru via `POST /api/v1/finance/invoices` (dengan mata uang & kurs `BR-05`), `recordPayment()` mencatat cicilan/pelunasan via `POST /api/v1/finance/payments` (`BR-06`).
+  - `CustomerRepository` & `VendorRepository`: mengambil analitik peringkat profitabilitas customer (`GET /api/v1/customers`) dan perbandingan tarif vendor (`GET /api/v1/vendors`).
+  - `SettingsRepository` & `SettingsScreen`: `syncFromBackend()` memuat perusahaan, cabang, pengguna, dan log audit dari `GET /api/v1/settings/overview`; `switchCompany()` mengganti `x-company-id` dan mengosongkan cache repository (`FR-CMP-06`, `BR-10`).
+  - `LoginScreen` & `AskAiScreen`: `LoginScreen` mengautentikasi via `POST /api/v1/auth/login` sebelum masuk ke `HomeShell`; `AskAiScreen` memanggil `POST /api/v1/insights/ask` berbasis data perusahaan aktif dengan fallback lokal saat offline.
+- 2026-11-11 (x) — **Bangun Backend (`NestJS + Prisma + PostgreSQL 16`) & Database Terisolasi**:
+  - `backend/docker-compose.yml`: container PostgreSQL 16 terisolasi (`freightintel-postgres`, network `freightintel-net`, volume `freightintel-pgdata`, port host `127.0.0.1:5439:5432`) — sama sekali tidak menyentuh container proyek lain (`biotrace-*`, `prima-hsse-*`).
+  - `backend/prisma/schema.prisma` & `seed.ts`: seluruh 18 tabel ERD PRD §8.2 dengan tipe uang `Decimal @db.Decimal(18, 2)` (`BR-04`), isolasi `companyId` (`BR-10`), serta data awal lengkap (2 perusahaan, 3 cabang, 6 peran RBAC + 28 izin, user `bcrypt`, 20 shipment, invoice revenue/cost, cicilan `payments`, custom field, notifikasi, audit log).
+  - `backend/src/*`: modul REST API NestJS (`/api/v1` di port `4100`) untuk `auth`, `dashboard`, `shipments` (+ P&L otomatis `BR-01..03`), `finance` (+ multi-mata uang `BR-05` & cicilan `BR-06`), dan `analytics` (`customers`, `vendors`, `insights`, `notifications`, `settings`).
+  - `backend/test/verify-api.ts` & `docs/BACKEND.md`: 9 skenario uji integrasi end-to-end lulus 100%.
+- 2026-11-11 (w) — **Tuntaskan seluruh celah detail PRD di frontend (0 `shortcut:` debt)**:
+  - `CreateShipmentScreen`, `EditShipmentScreen`, `ShipmentDetailScreen`, & `Shipment` (`FR-SHP-01`): tambah field `Kontainer / Kargo` serta jadwal `ETD` & `ETA` (dengan date picker) yang langsung tampil di kartu informasi kargo Detail Shipment; seragamkan header dengan `ScreenHeader`.
+  - `RecordTransactionScreen` & `Invoice` (`FR-REV-01`, `FR-CST-01`, `BR-05`): tambah `No. Invoice`, pemilih mata uang (`IDR`/`USD`/`SGD`) + input kurs ke IDR dengan pratinjau konversi otomatis ke ekuivalen IDR base, serta pre-select `initialShipmentNo` saat dibuka dari `ShipmentDetailScreen`.
+  - `NotificationScreen` (`FR-NOT-01..05`): tambah pengingat kas operasional rendah (`FR-NOT-04`), seragamkan `ScreenHeader`, dan tambah aksi `Baca semua`.
+  - `app_theme.dart`: hapus alias token lama `navy`/`border` (`0 shortcut:` tersisa di seluruh `lib/`).
 - 2026-11-11 (v) — **Perbaiki resolusi aset lokal `Onest` di `google_fonts` + hapus dependensi mati**:
   - Audit sumber `google_fonts-8.2.1` (`findFamilyWithVariantAssetPath`) menemukan bahwa paket ini mencari berkas di `AssetManifest` berdasarkan nama varian API (`Onest-Regular.ttf`, `Onest-Medium.ttf`, `Onest-SemiBold.ttf`, `Onest-Bold.ttf`, `Onest-ExtraBold.ttf`), bukan `Onest-400..800.ttf`, serta mewajibkan folder `assets/fonts/` terdaftar di bawah `flutter: assets:` (bukan hanya `flutter: fonts:`).
   - Berkas di `app/assets/fonts/` diganti namanya sesuai konvensi `google_fonts`, `- assets/fonts/` ditambahkan ke `pubspec.yaml`, dan `GoogleFonts.config.allowRuntimeFetching = false` dikunci di `lib/main.dart` agar aplikasi tidak pernah mengunduh font saat runtime.

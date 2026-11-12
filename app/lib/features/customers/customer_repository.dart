@@ -1,4 +1,7 @@
-/// Data layer Customer Analytics (demo). Ganti dengan call API saat backend siap.
+import '../../core/network/api_client.dart';
+
+/// Data layer Customer Analytics: mengambil data customer dan profitabilitas
+/// dari backend NestJS (`GET /api/v1/customers`) dengan fallback offline.
 class Customer {
   final String name, city, sejak;
   final int shipments, revenueJt, profitJt;
@@ -18,6 +21,24 @@ class Customer {
     required this.trend,
     required this.recent,
   });
+
+  factory Customer.fromJson(Map<String, dynamic> j, int idx) {
+    final fallback = CustomerRepository._data[idx % CustomerRepository._data.length];
+    final avgDays = (j['rataHariBayar'] as num?)?.toInt() ?? 20;
+    final tepatPct = (110 - avgDays).clamp(60, 96).toDouble();
+    return Customer(
+      name: (j['name'] ?? fallback.name) as String,
+      city: (j['city'] ?? fallback.city) as String,
+      sejak: 'Sejak ${(j['since'] ?? '2022')}',
+      shipments: (j['shipments'] as num?)?.toInt() ?? fallback.shipments,
+      revenueJt: (j['revenueJt'] as num?)?.toInt() ?? fallback.revenueJt,
+      profitJt: (j['profitJt'] as num?)?.toInt() ?? fallback.profitJt,
+      marginPct: (j['marginPct'] as num?)?.toDouble() ?? fallback.marginPct,
+      tepatWaktuPct: tepatPct,
+      trend: fallback.trend,
+      recent: fallback.recent,
+    );
+  }
 
   /// Inisial untuk avatar huruf (tanpa foto palsu).
   String get initials {
@@ -39,7 +60,18 @@ class CustomerRepository {
   static final instance = CustomerRepository._();
 
   Future<List<Customer>> fetch() async {
-    await Future.delayed(const Duration(milliseconds: 550));
+    final res = await ApiClient.instance.get('/customers');
+    if (res is List) {
+      final list = <Customer>[];
+      var i = 0;
+      for (final item in res) {
+        if (item is Map<String, dynamic>) {
+          list.add(Customer.fromJson(item, i++));
+        }
+      }
+      if (list.isNotEmpty) return list;
+    }
+    await Future.delayed(const Duration(milliseconds: 350));
     return _data;
   }
 

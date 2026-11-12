@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:iconsax_plus/iconsax_plus.dart';
+import '../../core/network/api_client.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/pressable.dart';
 
@@ -116,10 +117,18 @@ class _AskAiScreenState extends State<AskAiScreen> {
     });
     _toBottom();
 
-    await Future.delayed(const Duration(milliseconds: 750));
+    final res = await ApiClient.instance
+        .post('/insights/ask', body: {'question': text});
+    String reply;
+    if (res is Map<String, dynamic> && res['answer'] is String) {
+      reply = res['answer'] as String;
+    } else {
+      await Future.delayed(const Duration(milliseconds: 550));
+      reply = _answerFor(text);
+    }
     if (!mounted) return;
     setState(() {
-      _msgs.add((text: _answerFor(text), me: false));
+      _msgs.add((text: reply, me: false));
       _typing = false;
     });
     _toBottom();

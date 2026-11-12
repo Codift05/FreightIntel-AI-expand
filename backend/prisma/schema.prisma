@@ -1,0 +1,332 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Company {
+  id           String        @id @default(uuid()) @db.Uuid
+  name         String
+  npwp         String
+  address      String        @default("")
+  city         String        @default("Jakarta")
+  baseCurrency String        @default("IDR") @map("base_currency")
+  ppnPct       Int           @default(11) @map("ppn_pct")
+  taxSetting   Json?         @map("tax_setting")
+  createdAt    DateTime      @default(now()) @map("created_at")
+
+  branches      Branch[]
+  users         User[]
+  roles         Role[]
+  customers     Customer[]
+  vendors       Vendor[]
+  shipments     Shipment[]
+  customFields  CustomField[]
+  reports       Report[]
+  aiAnalyses    AiAnalysis[]
+  notifications Notification[]
+  auditLogs     AuditLog[]
+
+  @@map("companies")
+}
+
+model Branch {
+  id        String   @id @default(uuid()) @db.Uuid
+  companyId String   @map("company_id") @db.Uuid
+  code      String
+  name      String
+  city      String
+  address   String
+  isHead    Boolean  @default(false) @map("is_head")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@map("branches")
+}
+
+model Role {
+  id        String   @id @default(uuid()) @db.Uuid
+  companyId String   @map("company_id") @db.Uuid
+  name      String
+  isSystem  Boolean  @default(true) @map("is_system")
+
+  company         Company          @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  users           User[]
+  rolePermissions RolePermission[]
+
+  @@unique([companyId, name])
+  @@index([companyId])
+  @@map("roles")
+}
+
+model Permission {
+  id     String @id @default(uuid()) @db.Uuid
+  code   String @unique
+  module String
+  action String
+
+  rolePermissions RolePermission[]
+
+  @@map("permissions")
+}
+
+model RolePermission {
+  roleId       String @map("role_id") @db.Uuid
+  permissionId String @map("permission_id") @db.Uuid
+
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+  @@map("role_permissions")
+}
+
+model User {
+  id           String   @id @default(uuid()) @db.Uuid
+  companyId    String   @map("company_id") @db.Uuid
+  roleId       String   @map("role_id") @db.Uuid
+  branchName   String   @default("Jakarta") @map("branch_name")
+  name         String
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  company       Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  role          Role           @relation(fields: [roleId], references: [id])
+  notifications Notification[]
+  auditLogs     AuditLog[]
+
+  @@index([companyId])
+  @@map("users")
+}
+
+model Customer {
+  id         String   @id @default(uuid()) @db.Uuid
+  companyId  String   @map("company_id") @db.Uuid
+  code       String
+  name       String
+  npwp       String   @default("")
+  city       String   @default("Jakarta")
+  riskLevel  String   @default("Rendah") @map("risk_level")
+  avgPayDays Int      @default(18) @map("avg_pay_days")
+  sinceYear  String   @default("2022") @map("since_year")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  company   Company    @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  shipments Shipment[]
+  revenues  Revenue[]
+
+  @@index([companyId])
+  @@map("customers")
+}
+
+model Vendor {
+  id         String   @id @default(uuid()) @db.Uuid
+  companyId  String   @map("company_id") @db.Uuid
+  code       String
+  name       String
+  category   String
+  city       String   @default("Jakarta")
+  onTimePct  Decimal  @default(92.0) @map("on_time_pct") @db.Decimal(5, 2)
+  rateIndex  Decimal  @default(1.00) @map("rate_index") @db.Decimal(5, 2)
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  costs   Cost[]
+
+  @@index([companyId])
+  @@map("vendors")
+}
+
+model Shipment {
+  id          String   @id @default(uuid()) @db.Uuid
+  companyId   String   @map("company_id") @db.Uuid
+  customerId  String   @map("customer_id") @db.Uuid
+  shipmentNo  String   @map("shipment_no")
+  type        String
+  origin      String
+  destination String
+  container   String   @default("1 x 40ft HC")
+  etd         String   @default("12 Okt 2026")
+  eta         String   @default("28 Okt 2026")
+  status      String   @default("Booking")
+  isArchived  Boolean  @default(false) @map("is_archived")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  company  Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  customer Customer  @relation(fields: [customerId], references: [id])
+  revenues Revenue[]
+  costs    Cost[]
+
+  @@unique([companyId, shipmentNo])
+  @@index([companyId, status])
+  @@map("shipments")
+}
+
+model Revenue {
+  id            String   @id @default(uuid()) @db.Uuid
+  companyId     String   @map("company_id") @db.Uuid
+  shipmentId    String?  @map("shipment_id") @db.Uuid
+  customerId    String   @map("customer_id") @db.Uuid
+  invoiceNo     String   @map("invoice_no")
+  category      String
+  invoiceDate   DateTime @default(now()) @map("invoice_date")
+  currency      String   @default("IDR")
+  exchangeRate  Decimal  @default(1) @map("exchange_rate") @db.Decimal(18, 2)
+  amount        Decimal  @db.Decimal(18, 2)
+  amountBase    Decimal  @map("amount_base") @db.Decimal(18, 2)
+  taxOutput     Decimal  @default(0) @map("tax_output") @db.Decimal(18, 2)
+  paymentStatus String   @default("UNPAID") @map("payment_status")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  shipment Shipment? @relation(fields: [shipmentId], references: [id])
+  customer Customer  @relation(fields: [customerId], references: [id])
+  payments Payment[]
+
+  @@index([companyId, paymentStatus])
+  @@index([shipmentId])
+  @@map("revenues")
+}
+
+model Cost {
+  id            String   @id @default(uuid()) @db.Uuid
+  companyId     String   @map("company_id") @db.Uuid
+  shipmentId    String?  @map("shipment_id") @db.Uuid
+  vendorId      String   @map("vendor_id") @db.Uuid
+  invoiceNo     String   @map("invoice_no")
+  category      String
+  invoiceDate   DateTime @default(now()) @map("invoice_date")
+  currency      String   @default("IDR")
+  exchangeRate  Decimal  @default(1) @map("exchange_rate") @db.Decimal(18, 2)
+  amount        Decimal  @db.Decimal(18, 2)
+  amountBase    Decimal  @map("amount_base") @db.Decimal(18, 2)
+  taxInput      Decimal  @default(0) @map("tax_input") @db.Decimal(18, 2)
+  paymentStatus String   @default("UNPAID") @map("payment_status")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  shipment Shipment? @relation(fields: [shipmentId], references: [id])
+  vendor   Vendor    @relation(fields: [vendorId], references: [id])
+  payments Payment[]
+
+  @@index([companyId, paymentStatus])
+  @@index([shipmentId])
+  @@map("costs")
+}
+
+model Payment {
+  id         String   @id @default(uuid()) @db.Uuid
+  companyId  String   @map("company_id") @db.Uuid
+  revenueId  String?  @map("revenue_id") @db.Uuid
+  costId     String?  @map("cost_id") @db.Uuid
+  direction  String
+  amount     Decimal  @db.Decimal(18, 2)
+  amountBase Decimal  @map("amount_base") @db.Decimal(18, 2)
+  method     String   @default("Transfer Bank")
+  paidAt     DateTime @default(now()) @map("paid_at")
+
+  revenue Revenue? @relation(fields: [revenueId], references: [id], onDelete: Cascade)
+  cost    Cost?    @relation(fields: [costId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@index([revenueId])
+  @@index([costId])
+  @@map("payments")
+}
+
+model CustomField {
+  id        String   @id @default(uuid()) @db.Uuid
+  companyId String   @map("company_id") @db.Uuid
+  entity    String
+  label     String
+  type      String
+  isRequired Boolean @default(false) @map("is_required")
+  options   Json?
+
+  company Company            @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  values  CustomFieldValue[]
+
+  @@index([companyId, entity])
+  @@map("custom_fields")
+}
+
+model CustomFieldValue {
+  id            String @id @default(uuid()) @db.Uuid
+  customFieldId String @map("custom_field_id") @db.Uuid
+  entityId      String @map("entity_id") @db.Uuid
+  value         String
+
+  customField CustomField @relation(fields: [customFieldId], references: [id], onDelete: Cascade)
+
+  @@index([customFieldId, entityId])
+  @@map("custom_field_values")
+}
+
+model Report {
+  id        String   @id @default(uuid()) @db.Uuid
+  companyId String   @map("company_id") @db.Uuid
+  type      String
+  period    String
+  fileUrl   String?  @map("file_url")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@map("reports")
+}
+
+model AiAnalysis {
+  id        String   @id @default(uuid()) @db.Uuid
+  companyId String   @map("company_id") @db.Uuid
+  type      String
+  prompt    String
+  result    String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@map("ai_analyses")
+}
+
+model Notification {
+  id        String   @id @default(uuid()) @db.Uuid
+  companyId String   @map("company_id") @db.Uuid
+  userId    String?  @map("user_id") @db.Uuid
+  type      String
+  title     String
+  body      String
+  isRead    Boolean  @default(false) @map("is_read")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  user    User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([companyId, isRead])
+  @@map("notifications")
+}
+
+model AuditLog {
+  id        String   @id @default(uuid()) @db.Uuid
+  companyId String   @map("company_id") @db.Uuid
+  userId    String?  @map("user_id") @db.Uuid
+  actorName String   @map("actor_name")
+  actorRole String   @map("actor_role")
+  entity    String
+  entityId  String?  @map("entity_id")
+  action    String
+  target    String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  user    User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([companyId, createdAt])
+  @@map("audit_logs")
+}
