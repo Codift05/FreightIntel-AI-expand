@@ -103,7 +103,9 @@ class _ShipmentsScreenState extends State<ShipmentsScreen> {
       MaterialPageRoute(builder: (_) => const CreateShipmentScreen()),
     );
     if (s == null || !mounted) return;
-    setState(() => _items.insert(0, s));
+    final created = await _repo.create(s);
+    if (!mounted) return;
+    setState(() => _items.insert(0, created));
   }
 
   // Dummy untuk skeleton (bentuk mengikuti kartu asli).

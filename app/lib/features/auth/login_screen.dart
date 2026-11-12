@@ -1,11 +1,42 @@
 import 'package:flutter/material.dart';
-import '../../core/theme/app_theme.dart';
 import '../../core/illustrations.dart';
+import '../../core/network/api_client.dart';
+import '../../core/theme/app_theme.dart';
 import '../../core/widgets/logo_mark.dart';
 import '../home/home_shell.dart';
+import '../settings/settings_repository.dart';
 
-class LoginScreen extends StatelessWidget {
+class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
+
+  @override
+  State<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> {
+  final _emailCtrl =
+      TextEditingController(text: 'owner@nusantara.co.id');
+  final _passCtrl = TextEditingController(text: 'demo1234');
+  bool _loading = false;
+
+  @override
+  void dispose() {
+    _emailCtrl.dispose();
+    _passCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    if (_loading) return;
+    setState(() => _loading = true);
+    await ApiClient.instance.login(_emailCtrl.text, _passCtrl.text);
+    await SettingsRepository.instance.syncFromBackend();
+    if (!mounted) return;
+    setState(() => _loading = false);
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(builder: (_) => const HomeShell()),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -30,9 +61,10 @@ class LoginScreen extends StatelessWidget {
                     child: Text('Manajemen keuangan & pengiriman kargo',
                         style: labelStyle())),
                 const SizedBox(height: 36),
-                _field('Email', Icons.mail_outline_rounded),
+                _field('Email', Icons.mail_outline_rounded, _emailCtrl),
                 const SizedBox(height: 14),
-                _field('Password', Icons.lock_outline_rounded, obscure: true),
+                _field('Password', Icons.lock_outline_rounded, _passCtrl,
+                    obscure: true),
                 const SizedBox(height: 24),
                 FilledButton(
                   style: FilledButton.styleFrom(
@@ -43,15 +75,15 @@ class LoginScreen extends StatelessWidget {
                         borderRadius:
                             BorderRadius.circular(AppRadii.pill)),
                   ),
-                  onPressed: () => Navigator.of(context).pushReplacement(
-                      MaterialPageRoute(builder: (_) => const HomeShell())),
-                  child: const Text('Masuk',
-                      style: TextStyle(
+                  onPressed: _loading ? null : _submit,
+                  child: Text(_loading ? 'Memuat sesi...' : 'Masuk',
+                      style: const TextStyle(
                           fontWeight: FontWeight.w700, fontSize: 15)),
                 ),
                 const SizedBox(height: 14),
                 Center(
-                    child: Text('Demo. Tekan Masuk untuk melihat aplikasi.',
+                    child: Text(
+                        'Akun bawaan siap pakai. Tekan Masuk untuk membuka aplikasi.',
                         style: labelStyle().copyWith(
                             letterSpacing: 0, fontWeight: FontWeight.w500))),
               ],
@@ -62,8 +94,10 @@ class LoginScreen extends StatelessWidget {
     );
   }
 
-  Widget _field(String label, IconData icon, {bool obscure = false}) =>
+  Widget _field(String label, IconData icon, TextEditingController ctrl,
+          {bool obscure = false}) =>
       TextField(
+        controller: ctrl,
         obscureText: obscure,
         decoration: InputDecoration(
           labelText: label,

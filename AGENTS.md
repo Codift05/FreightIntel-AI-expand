@@ -3,23 +3,25 @@
 > Read this first. It applies to every AI agent (Claude, GPT, Gemini, etc.) that
 > edits this repo. Context source of truth: [`docs/PRD.md`](docs/PRD.md).
 > Current frontend state: [`docs/FRONTEND.md`](docs/FRONTEND.md) — keep it updated.
+> Current backend state: [`docs/BACKEND.md`](docs/BACKEND.md) — keep it updated.
 
 ## RULE 0 — Documentation is mandatory
 Any change to the app MUST be reflected in docs **in the same change**:
 - Frontend change → update [`docs/FRONTEND.md`](docs/FRONTEND.md) (what changed, why, new files).
-- New decision/convention → add it here or in `docs/FRONTEND.md`.
+- Backend / DB change → update [`docs/BACKEND.md`](docs/BACKEND.md).
+- New decision/convention → add it here or in `docs/FRONTEND.md` / `docs/BACKEND.md`.
 - Append a dated line to the **Changelog** at the bottom of `docs/FRONTEND.md`.
 A change without doc update is unfinished. This is so the next agent (often a
 different AI) understands the app without re-reading all code.
 
 ## Project in one line
-Flutter mobile app (Android/iOS) for Indonesian freight-forwarding finance:
-shipments, revenue/cost, profit, dashboard, AI insight. Backend (NestJS +
-PostgreSQL) is planned but **not built yet** — frontend uses demo data.
+Flutter mobile app (Android/iOS) + NestJS & PostgreSQL backend for Indonesian
+freight-forwarding finance: shipments, revenue/cost, profit, dashboard, AI
+insight. Backend (`backend/`) runs on port `4100` with isolated PostgreSQL 16
+Docker container (`freightintel-postgres` on `127.0.0.1:5439`).
 
 ## Scope right now
-Frontend only. Mature the UI with demo data. Do not add backend calls yet.
-Implementation order follows PRD §13 (Tahap 1 first).
+Full-stack connected: Flutter frontend (`app/`) + NestJS & Prisma backend (`backend/` on port `4100`) + isolated PostgreSQL 16 Docker (`freightintel-postgres` on `127.0.0.1:5439`). Repositories use `lib/core/network/api_client.dart` with automatic offline fallback.
 
 ## Hard conventions (do not break)
 - **Language:** UI copy in **Bahasa Indonesia**. (Known debt: some labels still

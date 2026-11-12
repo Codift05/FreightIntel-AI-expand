@@ -1,7 +1,8 @@
 # Dokumen internal (PRD, RAB, brand kit, infra) — TIDAK di-push
 docs/*
-# kecuali dokumentasi frontend untuk AI lintas-tool
+# kecuali dokumentasi teknis untuk AI lintas-tool
 !docs/FRONTEND.md
+!docs/BACKEND.md
 
 # Raw aset generate (sumber mentah, besar) — simpan lokal saja
 /Asset Generate/
@@ -28,3 +29,9 @@ node_modules/
 # Graphify local cache & interpreter markers
 **/graphify-out/cache/
 **/graphify-out/.graphify_*
+
+# Backend runtime & database volume
+backend/node_modules/
+backend/dist/
+backend/.pgdata/
+backend/.env

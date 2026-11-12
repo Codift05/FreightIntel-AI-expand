@@ -1,4 +1,8 @@
-/// Data layer Finance (demo). Ganti [_data] dengan call API saat backend siap.
+import '../../core/network/api_client.dart';
+
+/// Data layer Finance: mengambil daftar invoice dari backend NestJS
+/// (`GET /api/v1/finance/invoices`), mencatat transaksi baru (`POST /invoices`),
+/// dan mencatat cicilan/pelunasan (`POST /payments`) dengan fallback offline.
 enum FinanceEntryType { revenue, cost }
 
 class Invoice {
@@ -29,13 +33,39 @@ class Invoice {
     this.exchangeRate = 1,
   });
 
+  factory Invoice.fromJson(Map<String, dynamic> j) => Invoice(
+        (j['no'] ?? '') as String,
+        (j['note'] ?? '') as String,
+        (j['amount'] ?? '+Rp 0 jt') as String,
+        (j['status'] ?? 'UNPAID') as String,
+        (j['paid'] as bool?) ?? false,
+        type: j['type'] == 'cost'
+            ? FinanceEntryType.cost
+            : FinanceEntryType.revenue,
+        counterparty: j['counterparty'] as String?,
+        shipmentNo: j['shipmentNo'] as String?,
+        category: j['category'] as String?,
+        invoiceDate: j['invoiceDate'] is String
+            ? DateTime.tryParse(j['invoiceDate'] as String)
+            : null,
+        dppRupiah: (j['dppRupiah'] as num?)?.toInt(),
+        ppnRupiah: (j['ppnRupiah'] as num?)?.toInt(),
+        paidRupiah: (j['paidRupiah'] as num?)?.toInt(),
+        currency: (j['currency'] ?? 'IDR') as String,
+        exchangeRate: (j['exchangeRate'] as num?)?.toInt() ?? 1,
+      );
+
   /// Nilai tagihan dalam juta (dari DPP, atau parse dari string amount).
   int get totalJt =>
       dppRupiah ?? int.tryParse(amount.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0;
   bool get partial => status == 'PARTIAL';
 
   Invoice copyWith({String? status, bool? paid, int? paidRupiah}) => Invoice(
-        no, note, amount, status ?? this.status, paid ?? this.paid,
+        no,
+        note,
+        amount,
+        status ?? this.status,
+        paid ?? this.paid,
         type: type,
         counterparty: counterparty,
         shipmentNo: shipmentNo,
@@ -57,9 +87,24 @@ class FinanceRepository {
   bool get hasCache => _cache != null;
   List<Invoice> get cached => _cache ?? const [];
 
+  void clearCache() => _cache = null;
+
   void add(Invoice entry) {
     final existing = _cache ?? _data;
     _cache = [entry, ...existing];
+    ApiClient.instance.post('/finance/invoices', body: {
+      'type': entry.type == FinanceEntryType.cost ? 'cost' : 'revenue',
+      'invoiceNo': entry.no,
+      'counterparty': entry.counterparty ?? 'PT Garuda Trading',
+      'shipmentNo': entry.shipmentNo,
+      'category': entry.category ?? 'Ocean Freight',
+      'invoiceDate': entry.invoiceDate?.toIso8601String(),
+      'currency': entry.currency,
+      'exchangeRate': entry.exchangeRate,
+      'dppJt': entry.totalJt,
+      'ppnJt': entry.ppnRupiah ?? 0,
+      'paid': entry.paid,
+    });
   }
 
   /// Catat pembayaran (cicilan) sebesar [addJt] juta untuk invoice [no].
@@ -77,11 +122,25 @@ class FinanceRepository {
       paidRupiah: full ? inv.totalJt : paidNow,
     );
     _cache = list;
+    ApiClient.instance.post('/finance/payments', body: {
+      'invoiceNo': no,
+      'addJt': addJt,
+    });
   }
 
   Future<List<Invoice>> fetch() async {
     if (_cache != null) return _cache!;
-    await Future.delayed(const Duration(milliseconds: 700)); // simulasi API
+    final res = await ApiClient.instance.get('/finance/invoices');
+    if (res is List) {
+      final list = res
+          .whereType<Map<String, dynamic>>()
+          .map(Invoice.fromJson)
+          .toList();
+      if (list.isNotEmpty) {
+        return _cache = list;
+      }
+    }
+    await Future.delayed(const Duration(milliseconds: 350));
     return _cache = _data;
   }
 

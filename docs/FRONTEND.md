@@ -171,6 +171,18 @@ export PDF/Excel benar-benar menghasilkan file.
 - Insight tab icon changed star → `lamp_charge`. Finance localized to ID.
 
 ## Changelog
+- 2026-11-12 (y) — **Sambungkan seluruh Repository & Layar Flutter ke Backend NestJS (`/api/v1`) dengan Fallback Offline**:
+  - `lib/core/network/api_client.dart` (baru): HTTP client ringan berbasis `dart:io` (`HttpClient`) tanpa dependensi eksternal tambahan. Otomatis meresolusi `127.0.0.1:4100` (desktop / `adb reverse`) dan `10.0.2.2:4100` (Android emulator bridge) dengan timeout cepat (`1200ms`) serta mengirim header `x-company-id` (`BR-10`) dan `Authorization: Bearer <token>`.
+  - `ShipmentRepository` & `ShipmentsScreen`: `fetchPage()` mengambil dari `GET /api/v1/shipments`, `create()` mengirim `POST /api/v1/shipments`, `update()` menyinkronkan perubahan status/arsip/kontainer/ETD/ETA via `PATCH /api/v1/shipments/:id`.
+  - `FinanceRepository`: `fetch()` mengambil daftar invoice live dari `GET /api/v1/finance/invoices`, `add()` menyimpan transaksi pemasukan/biaya baru via `POST /api/v1/finance/invoices` (dengan mata uang & kurs `BR-05`), `recordPayment()` mencatat cicilan/pelunasan via `POST /api/v1/finance/payments` (`BR-06`).
+  - `CustomerRepository` & `VendorRepository`: mengambil analitik peringkat profitabilitas customer (`GET /api/v1/customers`) dan perbandingan tarif vendor (`GET /api/v1/vendors`).
+  - `SettingsRepository` & `SettingsScreen`: `syncFromBackend()` memuat perusahaan, cabang, pengguna, dan log audit dari `GET /api/v1/settings/overview`; `switchCompany()` mengganti `x-company-id` dan mengosongkan cache repository (`FR-CMP-06`, `BR-10`).
+  - `LoginScreen` & `AskAiScreen`: `LoginScreen` mengautentikasi via `POST /api/v1/auth/login` sebelum masuk ke `HomeShell`; `AskAiScreen` memanggil `POST /api/v1/insights/ask` berbasis data perusahaan aktif dengan fallback lokal saat offline.
+- 2026-11-11 (x) — **Bangun Backend (`NestJS + Prisma + PostgreSQL 16`) & Database Terisolasi**:
+  - `backend/docker-compose.yml`: container PostgreSQL 16 terisolasi (`freightintel-postgres`, network `freightintel-net`, volume `freightintel-pgdata`, port host `127.0.0.1:5439:5432`) — sama sekali tidak menyentuh container proyek lain (`biotrace-*`, `prima-hsse-*`).
+  - `backend/prisma/schema.prisma` & `seed.ts`: seluruh 18 tabel ERD PRD §8.2 dengan tipe uang `Decimal @db.Decimal(18, 2)` (`BR-04`), isolasi `companyId` (`BR-10`), serta data awal lengkap (2 perusahaan, 3 cabang, 6 peran RBAC + 28 izin, user `bcrypt`, 20 shipment, invoice revenue/cost, cicilan `payments`, custom field, notifikasi, audit log).
+  - `backend/src/*`: modul REST API NestJS (`/api/v1` di port `4100`) untuk `auth`, `dashboard`, `shipments` (+ P&L otomatis `BR-01..03`), `finance` (+ multi-mata uang `BR-05` & cicilan `BR-06`), dan `analytics` (`customers`, `vendors`, `insights`, `notifications`, `settings`).
+  - `backend/test/verify-api.ts` & `docs/BACKEND.md`: 9 skenario uji integrasi end-to-end lulus 100%.
 - 2026-11-11 (w) — **Tuntaskan seluruh celah detail PRD di frontend (0 `shortcut:` debt)**:
   - `CreateShipmentScreen`, `EditShipmentScreen`, `ShipmentDetailScreen`, & `Shipment` (`FR-SHP-01`): tambah field `Kontainer / Kargo` serta jadwal `ETD` & `ETA` (dengan date picker) yang langsung tampil di kartu informasi kargo Detail Shipment; seragamkan header dengan `ScreenHeader`.
   - `RecordTransactionScreen` & `Invoice` (`FR-REV-01`, `FR-CST-01`, `BR-05`): tambah `No. Invoice`, pemilih mata uang (`IDR`/`USD`/`SGD`) + input kurs ke IDR dengan pratinjau konversi otomatis ke ekuivalen IDR base, serta pre-select `initialShipmentNo` saat dibuka dari `ShipmentDetailScreen`.

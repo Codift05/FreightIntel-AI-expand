@@ -25,6 +25,14 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   final _repo = SettingsRepository.instance;
 
+  @override
+  void initState() {
+    super.initState();
+    _repo.syncFromBackend().then((_) {
+      if (mounted) setState(() {});
+    });
+  }
+
   Future<void> _open(Widget screen) async {
     await Navigator.of(context).push(
       MaterialPageRoute(builder: (_) => screen),
@@ -55,9 +63,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 Padding(
                   padding: const EdgeInsets.only(bottom: 10),
                   child: Pressable(
-                    onTap: () {
-                      setState(() => _repo.activeCompanyId = c.id);
+                    onTap: () async {
                       Navigator.of(ctx).pop();
+                      await _repo.switchCompany(c.id);
+                      if (!mounted) return;
+                      setState(() {});
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(content: Text('Perusahaan aktif: ${c.nama}')),
                       );
