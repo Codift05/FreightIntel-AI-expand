@@ -120,8 +120,8 @@ class _CustomFieldsScreenState extends State<CustomFieldsScreen> {
                     onPressed: () {
                       final n = nama.text.trim();
                       if (n.isNotEmpty) {
-                        setState(() => _repo.fields
-                            .add(CustomField(n, _target, tipe, wajib: wajib)));
+                        setState(() => _repo.addCustomField(
+                            CustomField(n, _target, tipe, wajib: wajib)));
                       }
                       Navigator.of(ctx).pop();
                     },

@@ -61,8 +61,8 @@ class _BranchesScreenState extends State<BranchesScreen> {
       ),
     );
     if (ok == true && nama.text.trim().isNotEmpty) {
-      setState(() => _repo.branches
-          .add(Branch(nama.text.trim(), kota.text.trim().isEmpty ? '-' : kota.text.trim())));
+      setState(() => _repo.addBranch(Branch(nama.text.trim(),
+          kota.text.trim().isEmpty ? '-' : kota.text.trim())));
     }
     nama.dispose();
     kota.dispose();

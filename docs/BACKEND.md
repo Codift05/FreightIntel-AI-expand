@@ -52,6 +52,10 @@ backend/
 | `GET` | `/api/v1/notifications` | Daftar notifikasi in-app (`FR-NOT-01..05`) |
 | `PATCH` | `/api/v1/notifications/read-all` | Tandai semua notifikasi sudah dibaca |
 | `GET` | `/api/v1/settings/overview` | Data perusahaan, cabang, pengguna, peran RBAC, custom field, dan audit log |
+| `PATCH` | `/api/v1/settings/company` | Perbarui identitas, mata uang utama, dan tarif PPN perusahaan aktif + audit log (`FR-CMP-03..04`) |
+| `POST` | `/api/v1/settings/branches` | Tambah cabang perusahaan baru + audit log (`FR-CMP-02`) |
+| `POST` | `/api/v1/settings/users` | Undang pengguna baru ke perusahaan aktif + audit log (`FR-USR-01`) |
+| `POST` | `/api/v1/settings/custom-fields` | Tambah custom field dinamis per modul + audit log (`FR-CF-01..04`) |
 
 ## 4. Cara Menjalankan & Menguji
 ```bash

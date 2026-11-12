@@ -53,4 +53,40 @@ export class AnalyticsController {
     const companyId = await this.prisma.resolveCompanyId(companyHeader);
     return this.analytics.getSettingsOverview(companyId);
   }
+
+  @Patch('settings/company')
+  async updateCompany(
+    @Headers('x-company-id') companyHeader: string | undefined,
+    @Body() body: any,
+  ) {
+    const companyId = await this.prisma.resolveCompanyId(companyHeader);
+    return this.analytics.updateCompany(companyId, body);
+  }
+
+  @Post('settings/branches')
+  async createBranch(
+    @Headers('x-company-id') companyHeader: string | undefined,
+    @Body() body: { name: string; city: string },
+  ) {
+    const companyId = await this.prisma.resolveCompanyId(companyHeader);
+    return this.analytics.createBranch(companyId, body);
+  }
+
+  @Post('settings/users')
+  async inviteUser(
+    @Headers('x-company-id') companyHeader: string | undefined,
+    @Body() body: { name: string; email: string; roleName?: string; branchName?: string },
+  ) {
+    const companyId = await this.prisma.resolveCompanyId(companyHeader);
+    return this.analytics.inviteUser(companyId, body);
+  }
+
+  @Post('settings/custom-fields')
+  async createCustomField(
+    @Headers('x-company-id') companyHeader: string | undefined,
+    @Body() body: { name: string; targetModule: string; fieldType: string; isRequired?: boolean },
+  ) {
+    const companyId = await this.prisma.resolveCompanyId(companyHeader);
+    return this.analytics.createCustomField(companyId, body);
+  }
 }

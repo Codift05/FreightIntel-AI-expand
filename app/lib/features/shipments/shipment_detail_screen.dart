@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:iconsax_plus/iconsax_plus.dart';
+import '../../core/network/api_client.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/app_card.dart';
 import '../../core/widgets/pressable.dart';
 import '../finance/finance_repository.dart';
 import '../finance/record_transaction_screen.dart';
-import 'shipment_repository.dart';
 import 'edit_shipment_screen.dart';
+import 'shipment_repository.dart';
 import 'status_chip.dart';
 
 /// Detail shipment (gaya layar kanan Reference Design):
@@ -23,6 +24,44 @@ class ShipmentDetailScreen extends StatefulWidget {
 
 class _ShipmentDetailScreenState extends State<ShipmentDetailScreen> {
   late Shipment s = widget.shipment;
+  List<_Item>? _liveRevs;
+  List<_Item>? _liveCosts;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPnl();
+  }
+
+  static String _payLabel(String? st) => switch (st) {
+        'PAID' => 'Lunas',
+        'PARTIAL' => 'Cicilan',
+        _ => 'Belum lunas',
+      };
+
+  Future<void> _loadPnl() async {
+    final res = await ApiClient.instance.get('/shipments/${s.id}/pnl');
+    if (!mounted || res is! Map<String, dynamic>) return;
+    final revs = res['revenues'];
+    final costs = res['costs'];
+    setState(() {
+      s = Shipment.fromJson(res);
+      if (revs is List && revs.isNotEmpty) {
+        _liveRevs = revs.whereType<Map<String, dynamic>>().map((r) => _Item(
+              '${r['category'] ?? 'Pendapatan'} (${r['invoiceNo'] ?? ''})',
+              (r['amountJt'] as num?)?.toInt() ?? 0,
+              _payLabel(r['paymentStatus'] as String?),
+            )).toList();
+      }
+      if (costs is List && costs.isNotEmpty) {
+        _liveCosts = costs.whereType<Map<String, dynamic>>().map((c) => _Item(
+              '${c['category'] ?? 'Biaya'} (${c['vendor'] ?? ''})',
+              (c['amountJt'] as num?)?.toInt() ?? 0,
+              _payLabel(c['paymentStatus'] as String?),
+            )).toList();
+      }
+    });
+  }
 
   /// Buka layar ubah; hasilnya menggantikan data yang tampil.
   Future<void> _edit() async {
@@ -55,6 +94,8 @@ class _ShipmentDetailScreenState extends State<ShipmentDetailScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Transaksi berhasil ditambahkan.')),
     );
+    await Future.delayed(const Duration(milliseconds: 300));
+    if (mounted) _loadPnl();
   }
 
   @override
@@ -91,27 +132,29 @@ class _ShipmentDetailScreenState extends State<ShipmentDetailScreen> {
                   _title('Rincian pendapatan'),
                   const SizedBox(height: 10),
                   _items(
-                      _split(
-                          _rev,
-                          const [
-                            'Ongkos angkut utama',
-                            'Penanganan & muat',
-                            'Dokumen & administrasi'
-                          ],
-                          const ['Lunas', 'Cicilan', 'Belum lunas']),
+                      _liveRevs ??
+                          _split(
+                              _rev,
+                              const [
+                                'Ongkos angkut utama',
+                                'Penanganan & muat',
+                                'Dokumen & administrasi'
+                              ],
+                              const ['Lunas', 'Cicilan', 'Belum lunas']),
                       AppColors.green),
                   const SizedBox(height: 16),
                   _title('Rincian biaya'),
                   const SizedBox(height: 10),
                   _items(
-                      _split(
-                          _cost,
-                          const [
-                            'Vendor pelayaran/maskapai',
-                            'Armada darat',
-                            'Kepabeanan & pelabuhan'
-                          ],
-                          const ['Lunas', 'Belum lunas', 'Lunas']),
+                      _liveCosts ??
+                          _split(
+                              _cost,
+                              const [
+                                'Vendor pelayaran/maskapai',
+                                'Armada darat',
+                                'Kepabeanan & pelabuhan'
+                              ],
+                              const ['Lunas', 'Belum lunas', 'Lunas']),
                       AppColors.loss),
                   const SizedBox(height: 20),
                   _title('Informasi kargo'),

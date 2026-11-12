@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:iconsax_plus/iconsax_plus.dart';
+import '../../core/illustrations.dart';
+import '../../core/network/api_client.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/app_card.dart';
 import '../../core/widgets/empty_state.dart';
 import '../../core/widgets/screen_header.dart';
-import '../../core/illustrations.dart';
 
 /// Pusat notifikasi in-app (PRD FR-NOT-01..05):
 /// - FR-NOT-01: Reminder invoice jatuh tempo (piutang)
@@ -61,12 +62,50 @@ class _NotificationScreenState extends State<NotificationScreen> {
 
   bool get _hasUnread => _items.any((e) => !e.read);
 
+  @override
+  void initState() {
+    super.initState();
+    _loadNotifications();
+  }
+
+  static (IconData, Color) _styleForKind(String? kind) => switch (kind) {
+        'INVOICE_DUE' => (IconsaxPlusBold.receipt_item, AppColors.warning),
+        'VENDOR_PAYABLE' => (IconsaxPlusBold.money_send, AppColors.loss),
+        'LOW_CASH' => (IconsaxPlusBold.wallet_remove, AppColors.loss),
+        'SHIPMENT_DELAY' => (IconsaxPlusBold.truck, AppColors.ink),
+        _ => (IconsaxPlusBold.wallet_money, AppColors.greenInk),
+      };
+
+  Future<void> _loadNotifications() async {
+    final res = await ApiClient.instance.get('/notifications');
+    if (!mounted || res is! List || res.isEmpty) return;
+    final list = res.whereType<Map<String, dynamic>>().map((n) {
+      final (icon, color) = _styleForKind(n['kind'] as String?);
+      return _Notif(
+        icon,
+        color,
+        (n['title'] ?? 'Notifikasi') as String,
+        (n['body'] ?? '') as String,
+        'Baru saja',
+        read: (n['isRead'] as bool?) ?? false,
+      );
+    }).toList();
+    if (list.isNotEmpty) {
+      setState(() {
+        _items
+          ..clear()
+          ..addAll(list);
+      });
+    }
+  }
+
   void _markAllRead() {
     setState(() {
       for (final n in _items) {
         n.read = true;
       }
     });
+    ApiClient.instance.patch('/notifications/read-all');
   }
 
   @override

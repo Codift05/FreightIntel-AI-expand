@@ -147,6 +147,41 @@ class SettingsRepository {
   void updateActive(Company c) {
     final i = companies.indexWhere((e) => e.id == c.id);
     if (i >= 0) companies[i] = c;
+    ApiClient.instance.patch('/settings/company', body: {
+      'name': c.nama,
+      'npwp': c.npwp,
+      'address': c.alamat,
+      'baseCurrency': c.mataUang,
+      'vatRate': c.ppnPersen,
+    });
+  }
+
+  void addBranch(Branch b) {
+    branches.add(b);
+    ApiClient.instance.post('/settings/branches', body: {
+      'name': b.nama,
+      'city': b.kota,
+    });
+  }
+
+  void addUser(AppUser u) {
+    users.add(u);
+    ApiClient.instance.post('/settings/users', body: {
+      'name': u.nama,
+      'email': u.email,
+      'roleName': u.peran,
+      'branchName': u.cabang,
+    });
+  }
+
+  void addCustomField(CustomField f) {
+    fields.add(f);
+    ApiClient.instance.post('/settings/custom-fields', body: {
+      'name': f.nama,
+      'targetModule': f.target,
+      'fieldType': f.tipe.label,
+      'isRequired': f.wajib,
+    });
   }
 
   /// Pindah perusahaan aktif (FR-CMP-06 & BR-10): perbarui header `x-company-id`
@@ -174,7 +209,8 @@ class SettingsRepository {
               npwp: (c['npwp'] ?? '') as String,
               alamat: (c['address'] ?? '') as String,
               mataUang: (c['baseCurrency'] ?? 'IDR') as String,
-              ppnPersen: (c['vatRate'] as num?)?.toDouble() ?? 11,
+              ppnPersen:
+                  ((c['ppnPct'] ?? c['vatRate']) as num?)?.toDouble() ?? 11,
             )));
       final backendActive = res['activeCompanyId'] as String?;
       if (backendActive != null &&

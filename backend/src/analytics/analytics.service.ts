@@ -198,4 +198,128 @@ export class AnalyticsService {
       auditLogs,
     };
   }
+
+  async updateCompany(
+    companyId: string,
+    dto: {
+      name?: string;
+      npwp?: string;
+      address?: string;
+      baseCurrency?: string;
+      vatRate?: number;
+    },
+  ) {
+    const updated = await this.prisma.company.update({
+      where: { id: companyId },
+      data: {
+        ...(dto.name ? { name: dto.name.trim() } : {}),
+        ...(dto.npwp ? { npwp: dto.npwp.trim() } : {}),
+        ...(dto.address ? { address: dto.address.trim() } : {}),
+        ...(dto.baseCurrency ? { baseCurrency: dto.baseCurrency } : {}),
+        ...(dto.vatRate != null ? { ppnPct: Number(dto.vatRate) } : {}),
+      },
+    });
+    await this.prisma.auditLog.create({
+      data: {
+        companyId,
+        actorName: 'Hendra Wijaya',
+        actorRole: 'Owner',
+        entity: 'COMPANY',
+        entityId: companyId,
+        action: 'Memperbarui profil perusahaan',
+        target: `${updated.name} (${updated.baseCurrency} · PPN ${Number(updated.ppnPct)}%)`,
+      },
+    });
+    return updated;
+  }
+
+  async createBranch(
+    companyId: string,
+    dto: { name: string; city: string },
+  ) {
+    const code = `${(dto.city || 'CBG').slice(0, 3).toUpperCase()}-${Date.now() % 100}`;
+    const branch = await this.prisma.branch.create({
+      data: {
+        companyId,
+        code,
+        name: dto.name.trim(),
+        city: dto.city.trim() || '-',
+        address: dto.city.trim() || '-',
+      },
+    });
+    await this.prisma.auditLog.create({
+      data: {
+        companyId,
+        actorName: 'Hendra Wijaya',
+        actorRole: 'Owner',
+        entity: 'BRANCH',
+        entityId: branch.id,
+        action: 'Menambah cabang baru',
+        target: `${branch.name} (${branch.city})`,
+      },
+    });
+    return branch;
+  }
+
+  async inviteUser(
+    companyId: string,
+    dto: { name: string; email: string; roleName?: string; branchName?: string },
+  ) {
+    let role = await this.prisma.role.findFirst({
+      where: { companyId, name: dto.roleName || 'Staff' },
+    });
+    if (!role) {
+      role = await this.prisma.role.findFirst({ where: { companyId } });
+    }
+    const user = await this.prisma.user.create({
+      data: {
+        companyId,
+        roleId: role!.id,
+        name: dto.name.trim(),
+        email: dto.email.trim() || `staff.${Date.now() % 1000}@nusantara.co.id`,
+        passwordHash: 'demo-invited',
+        branchName: dto.branchName || 'Kantor Pusat',
+        isActive: true,
+      },
+    });
+    await this.prisma.auditLog.create({
+      data: {
+        companyId,
+        actorName: 'Hendra Wijaya',
+        actorRole: 'Owner',
+        entity: 'USER',
+        entityId: user.id,
+        action: 'Mengundang pengguna baru',
+        target: `${user.name} (${user.email})`,
+      },
+    });
+    return user;
+  }
+
+  async createCustomField(
+    companyId: string,
+    dto: { name: string; targetModule: string; fieldType: string; isRequired?: boolean },
+  ) {
+    const cf = await this.prisma.customField.create({
+      data: {
+        companyId,
+        label: dto.name.trim(),
+        entity: dto.targetModule.toUpperCase(),
+        type: dto.fieldType,
+        isRequired: dto.isRequired ?? false,
+      },
+    });
+    await this.prisma.auditLog.create({
+      data: {
+        companyId,
+        actorName: 'Hendra Wijaya',
+        actorRole: 'Owner',
+        entity: 'CUSTOM_FIELD',
+        entityId: cf.id,
+        action: 'Menambah custom field',
+        target: `${cf.label} (${dto.targetModule})`,
+      },
+    });
+    return cf;
+  }
 }

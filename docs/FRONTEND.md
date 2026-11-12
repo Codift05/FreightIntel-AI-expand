@@ -171,6 +171,12 @@ export PDF/Excel benar-benar menghasilkan file.
 - Insight tab icon changed star → `lamp_charge`. Finance localized to ID.
 
 ## Changelog
+- 2026-11-12 (z) — **Sambungkan Dashboard, Detail Shipment P&L, Insight AI, Notifikasi, & Mutasi Pengaturan ke Backend NestJS**:
+  - `DashboardScreen`: ambil KPI real-time & shipment sorotan dari `GET /api/v1/dashboard/summary` dan tampilkan nama perusahaan aktif di sheet profil (`Owner · <perusahaan aktif>`).
+  - `ShipmentDetailScreen`: ambil rincian item invoice pendapatan & biaya nyata dari `GET /api/v1/shipments/:id/pnl` (dan otomatis refresh setelah mencatat transaksi baru di shipment tersebut).
+  - `InsightScreen`: ambil *headline*, vendor termahal, dan rentang prediksi bulan depan (`predictedProfitJt`, `lowBandJt`, `highBandJt`) dari `GET /api/v1/insights`.
+  - `NotificationScreen`: ambil daftar notifikasi dari `GET /api/v1/notifications` dan hubungkan tombol `Baca semua` ke `PATCH /api/v1/notifications/read-all`.
+  - `SettingsRepository` & layar Pengaturan (`CompanyScreen`, `BranchesScreen`, `UsersScreen`, `CustomFieldsScreen`): simpan perubahan profil perusahaan (`PATCH /settings/company`), cabang baru (`POST /settings/branches`), undangan pengguna (`POST /settings/users`), dan custom field baru (`POST /settings/custom-fields`) ke PostgreSQL beserta pencatatan otomatis ke `audit_logs`.
 - 2026-11-12 (y) — **Sambungkan seluruh Repository & Layar Flutter ke Backend NestJS (`/api/v1`) dengan Fallback Offline**:
   - `lib/core/network/api_client.dart` (baru): HTTP client ringan berbasis `dart:io` (`HttpClient`) tanpa dependensi eksternal tambahan. Otomatis meresolusi `127.0.0.1:4100` (desktop / `adb reverse`) dan `10.0.2.2:4100` (Android emulator bridge) dengan timeout cepat (`1200ms`) serta mengirim header `x-company-id` (`BR-10`) dan `Authorization: Bearer <token>`.
   - `ShipmentRepository` & `ShipmentsScreen`: `fetchPage()` mengambil dari `GET /api/v1/shipments`, `create()` mengirim `POST /api/v1/shipments`, `update()` menyinkronkan perubahan status/arsip/kontainer/ETD/ETA via `PATCH /api/v1/shipments/:id`.

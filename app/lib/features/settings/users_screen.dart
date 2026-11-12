@@ -155,7 +155,7 @@ class _UsersScreenState extends State<UsersScreen> {
                   onPressed: () {
                     final n = nama.text.trim();
                     if (n.isNotEmpty) {
-                      setState(() => _repo.users.add(AppUser(
+                      setState(() => _repo.addUser(AppUser(
                           n,
                           email.text.trim().isEmpty
                               ? '-'

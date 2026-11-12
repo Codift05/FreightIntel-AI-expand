@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:iconsax_plus/iconsax_plus.dart';
 import 'package:skeletonizer/skeletonizer.dart';
+import '../../core/network/api_client.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/app_card.dart';
 import '../../core/widgets/pressable.dart';
@@ -21,38 +22,81 @@ class InsightScreen extends StatefulWidget {
 
 class _InsightScreenState extends State<InsightScreen> {
   bool _loading = true;
+  String _headline =
+      'Profit naik 12%, tapi margin rute Jakarta → Tokyo turun 6 poin.';
+  int _predProfitJt = 820;
+  int _lowBandJt = 760;
+  int _highBandJt = 880;
+  String _expensiveVendor = 'CV Mitra Laut';
 
   @override
   void initState() {
     super.initState();
-    Future.delayed(const Duration(milliseconds: 600), () {
-      if (mounted) setState(() => _loading = false);
-    });
+    _loadInsights();
   }
 
-  static const _causes = <_Cause>[
-    (name: 'Biaya trucking', delta: '+18%', amount: 'Rp 14 jt', bad: true),
-    (name: 'Vendor CV Mitra Laut', delta: '+9%', amount: 'Rp 6 jt', bad: true),
-    (name: 'Handling Belawan', delta: '-4%', amount: 'Rp 2 jt', bad: false),
-  ];
+  Future<void> _loadInsights() async {
+    final res = await ApiClient.instance.get('/insights');
+    if (res is Map<String, dynamic>) {
+      final fc = res['forecastNextMonth'];
+      final sum = res['summary'];
+      if (mounted) {
+        setState(() {
+          if (res['headline'] is String) {
+            _headline = res['headline'] as String;
+          }
+          if (fc is Map<String, dynamic>) {
+            _predProfitJt =
+                (fc['predictedProfitJt'] as num?)?.toInt() ?? _predProfitJt;
+            _lowBandJt = (fc['lowBandJt'] as num?)?.toInt() ?? _lowBandJt;
+            _highBandJt = (fc['highBandJt'] as num?)?.toInt() ?? _highBandJt;
+          }
+          if (sum is Map<String, dynamic> &&
+              sum['expensiveVendor'] is String) {
+            _expensiveVendor = sum['expensiveVendor'] as String;
+          }
+          _loading = false;
+        });
+      }
+      return;
+    }
+    await Future.delayed(const Duration(milliseconds: 500));
+    if (mounted) setState(() => _loading = false);
+  }
 
-  static const _recs = <_Rec>[
-    (
-      title: 'Negosiasi ulang tarif CV Mitra Laut',
-      note: 'Tarif 12% di atas rata-rata vendor sejenis.',
-      impact: 'hemat Rp 24 jt/bln'
-    ),
-    (
-      title: 'Alihkan sebagian rute Jakarta → Tokyo ke jalur laut',
-      note: 'Margin udara turun 6 poin, laut stabil 3 bulan terakhir.',
-      impact: 'margin +4 poin'
-    ),
-    (
-      title: 'Tagih 2 invoice yang lewat jatuh tempo',
-      note: 'INV/2610/009 dan INV/2609/008.',
-      impact: 'kas +Rp 130 jt'
-    ),
-  ];
+  List<_Cause> get _causes => <_Cause>[
+        (name: 'Biaya trucking', delta: '+18%', amount: 'Rp 14 jt', bad: true),
+        (
+          name: 'Vendor $_expensiveVendor',
+          delta: '+14%',
+          amount: 'Rp 9 jt',
+          bad: true
+        ),
+        (
+          name: 'Handling Belawan',
+          delta: '-4%',
+          amount: 'Rp 2 jt',
+          bad: false
+        ),
+      ];
+
+  List<_Rec> get _recs => <_Rec>[
+        (
+          title: 'Negosiasi ulang tarif $_expensiveVendor',
+          note: 'Tarif di atas rata-rata pasar vendor sejenis.',
+          impact: 'hemat Rp 24 jt/bln'
+        ),
+        (
+          title: 'Alihkan sebagian rute Jakarta → Tokyo ke jalur laut',
+          note: 'Margin udara turun 6 poin, laut stabil 3 bulan terakhir.',
+          impact: 'margin +4 poin'
+        ),
+        (
+          title: 'Tagih 2 invoice yang lewat jatuh tempo',
+          note: 'INV/2610/009 dan INV/2609/008.',
+          impact: 'kas +Rp 130 jt'
+        ),
+      ];
 
   void _askAi() => Navigator.of(context).push(
         MaterialPageRoute(builder: (_) => const AskAiScreen()),
@@ -113,9 +157,9 @@ class _InsightScreenState extends State<InsightScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Profit naik 12%, tapi margin rute Jakarta → Tokyo turun 6 poin.',
-              style: TextStyle(
+            Text(
+              _headline,
+              style: const TextStyle(
                   color: Colors.white,
                   fontSize: 19,
                   fontWeight: FontWeight.w700,
@@ -245,7 +289,7 @@ class _InsightScreenState extends State<InsightScreen> {
             Row(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                Text('Rp 820 jt', style: numStyle(size: 25)),
+                Text('Rp $_predProfitJt jt', style: numStyle(size: 25)),
                 const SizedBox(width: 10),
                 Padding(
                   padding: const EdgeInsets.only(bottom: 3),
@@ -253,7 +297,7 @@ class _InsightScreenState extends State<InsightScreen> {
                     children: [
                       const Icon(Icons.arrow_drop_up,
                           size: 18, color: AppColors.greenInk),
-                      Text('4%',
+                      Text('8%',
                           style: const TextStyle(
                               color: AppColors.greenInk,
                               fontSize: 12.5,
@@ -288,13 +332,15 @@ class _InsightScreenState extends State<InsightScreen> {
               ),
             ),
             const SizedBox(height: 8),
-            const Row(
+            Row(
               children: [
-                Text('Rp 760 jt',
-                    style: TextStyle(color: AppColors.muted, fontSize: 11.5)),
-                Spacer(),
-                Text('Rp 880 jt',
-                    style: TextStyle(color: AppColors.muted, fontSize: 11.5)),
+                Text('Rp $_lowBandJt jt',
+                    style: const TextStyle(
+                        color: AppColors.muted, fontSize: 11.5)),
+                const Spacer(),
+                Text('Rp $_highBandJt jt',
+                    style: const TextStyle(
+                        color: AppColors.muted, fontSize: 11.5)),
               ],
             ),
             const SizedBox(height: 10),

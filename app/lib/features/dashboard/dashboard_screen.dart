@@ -1,14 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:iconsax_plus/iconsax_plus.dart';
-import '../../core/theme/app_theme.dart';
-import '../../core/widgets/mode_icon.dart';
 import '../../core/illustrations.dart';
+import '../../core/network/api_client.dart';
+import '../../core/theme/app_theme.dart';
 import '../../core/widgets/app_card.dart';
+import '../../core/widgets/mode_icon.dart';
 import '../../core/widgets/pressable.dart';
 import '../auth/login_screen.dart';
-import '../settings/settings_screen.dart';
 import '../notifications/notification_screen.dart';
+import '../settings/settings_repository.dart';
+import '../settings/settings_screen.dart';
 import '../shipments/shipment_detail_screen.dart';
 import '../shipments/shipment_repository.dart';
 
@@ -41,7 +43,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
   final _pc = PageController(initialPage: 1);
   static const _labels = ['Harian', 'Bulanan', 'Tahunan'];
 
-  static const List<_PData> _periods = [
+  final List<_PData> _periods = List.of(_defaultPeriods);
+  Shipment _featured = _defaultFeatured;
+
+  static const _defaultFeatured = Shipment(
+    'FI-2610-03E8',
+    'PT Garuda Trading',
+    'Jakarta → Rotterdam',
+    'Ocean Freight',
+    'Rp 80 jt',
+    'Rp 20 jt',
+    true,
+    'Booking',
+  );
+
+  static const List<_PData> _defaultPeriods = [
     (
       name: 'Harian',
       dateLabel: '9 Nov 2026',
@@ -96,6 +112,58 @@ class _DashboardScreenState extends State<DashboardScreen> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    _loadLiveSummary();
+  }
+
+  Future<void> _loadLiveSummary() async {
+    final res = await ApiClient.instance
+        .get('/dashboard/summary', query: {'period': 'Bulanan'});
+    if (!mounted || res is! Map<String, dynamic>) return;
+    final kpis = res['kpis'];
+    final feat = res['featuredShipment'];
+    setState(() {
+      if (feat is Map<String, dynamic>) {
+        _featured = Shipment.fromJson(feat);
+      }
+      if (kpis is Map<String, dynamic>) {
+        final netJt = (kpis['netProfitJt'] as num?)?.toInt() ?? 789;
+        final revJt = (kpis['revenueJt'] as num?)?.toInt() ?? 3200;
+        final costJt = (kpis['costJt'] as num?)?.toInt() ?? 2400;
+        final arJt = (kpis['receivablesJt'] as num?)?.toInt() ?? 636;
+        final apJt = (kpis['payablesJt'] as num?)?.toInt() ?? 1800;
+        final margin = (kpis['marginPct'] as num?)?.toDouble() ?? 24.6;
+        final activeShp = (res['activeShipments'] as num?)?.toInt() ?? 20;
+        _periods[1] = (
+          name: 'Bulanan',
+          dateLabel: 'November 2026',
+          hero: 'Laba bersih bulan ini',
+          profit: 'Rp $netJt jt',
+          profitFull: 'Rp ${netJt * 1000}.000',
+          sub:
+              'Margin ${margin.toStringAsFixed(1).replaceAll('.', ',')}% · $activeShp shipment',
+          pl: '14,3%',
+          rev: revJt >= 1000
+              ? 'Rp ${(revJt / 1000).toStringAsFixed(1).replaceAll('.', ',')}'
+              : 'Rp $revJt',
+          revU: revJt >= 1000 ? 'M' : 'jt',
+          cost: costJt >= 1000
+              ? 'Rp ${(costJt / 1000).toStringAsFixed(1).replaceAll('.', ',')}'
+              : 'Rp $costJt',
+          costU: costJt >= 1000 ? 'M' : 'jt',
+          piu: 'Rp $arJt',
+          piuU: 'jt',
+          hut: apJt >= 1000
+              ? 'Rp ${(apJt / 1000).toStringAsFixed(1).replaceAll('.', ',')}'
+              : 'Rp $apJt',
+          hutU: apJt >= 1000 ? 'M' : 'jt',
+        );
+      }
+    });
+  }
+
+  @override
   void dispose() {
     _pc.dispose();
     super.dispose();
@@ -130,10 +198,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Owner · PT Nusantara Freight',
+                        Text('Owner · ${SettingsRepository.instance.active.nama}',
                             style: numStyle(size: 15)),
                         const SizedBox(height: 2),
-                        const Text('Sesi demo aktif',
+                        const Text('Sesi aktif',
                             style: TextStyle(
                                 color: AppColors.muted, fontSize: 12.5)),
                       ],
@@ -144,12 +212,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
               const SizedBox(height: 18),
               Pressable(
                 semanticLabel: 'Pengaturan',
-                onTap: () {
+                onTap: () async {
                   Navigator.of(ctx).pop();
-                  Navigator.of(context).push(
+                  await Navigator.of(context).push(
                     MaterialPageRoute(
                         builder: (_) => const SettingsScreen()),
                   );
+                  if (mounted) _loadLiveSummary();
                 },
                 child: Container(
                   padding: const EdgeInsets.symmetric(
@@ -237,7 +306,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
               controller: _pc,
               allowImplicitScrolling: true,
               itemCount: _periods.length,
-              itemBuilder: (_, i) => _PeriodPage(_periods[i]),
+              itemBuilder: (_, i) =>
+                  _PeriodPage(_periods[i], featured: _featured),
             ),
           ),
         ],
@@ -331,7 +401,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
 /// Konten satu periode. Di-keep-alive agar swipe balik tak rebuild (anti-lag).
 class _PeriodPage extends StatefulWidget {
   final _PData p;
-  const _PeriodPage(this.p);
+  final Shipment featured;
+  const _PeriodPage(this.p, {required this.featured});
   @override
   State<_PeriodPage> createState() => _PeriodPageState();
 }
@@ -341,21 +412,11 @@ class _PeriodPageState extends State<_PeriodPage>
   @override
   bool get wantKeepAlive => true;
 
-  static const _featuredShipment = Shipment(
-    'FI-2610-03E8',
-    'PT Garuda Trading',
-    'Jakarta → Rotterdam',
-    'Ocean Freight',
-    'Rp 80 jt',
-    'Rp 20 jt',
-    true,
-    'Booking',
-  );
-
   @override
   Widget build(BuildContext context) {
     super.build(context);
     final p = widget.p;
+    final feat = widget.featured;
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 2, 20, 116),
       children: [
@@ -427,8 +488,7 @@ class _PeriodPageState extends State<_PeriodPage>
             Pressable(
               onTap: () => Navigator.of(context).push(
                 MaterialPageRoute(
-                    builder: (_) =>
-                        const ShipmentDetailScreen(_featuredShipment)),
+                    builder: (_) => ShipmentDetailScreen(feat)),
               ),
               child: const Text('Lihat detail',
                   style: TextStyle(
@@ -440,10 +500,9 @@ class _PeriodPageState extends State<_PeriodPage>
         ),
         const SizedBox(height: 10),
         _FeaturedShipmentNote(
-          shipment: _featuredShipment,
+          shipment: feat,
           onTap: () => Navigator.of(context).push(
-            MaterialPageRoute(
-                builder: (_) => const ShipmentDetailScreen(_featuredShipment)),
+            MaterialPageRoute(builder: (_) => ShipmentDetailScreen(feat)),
           ),
         ),
         const SizedBox(height: 14),
