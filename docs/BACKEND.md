@@ -72,3 +72,39 @@ npm --prefix backend test
 # 4. Jalankan server API di port 4100
 npm --prefix backend run start:dev
 ```
+
+## 5. Celah terbuka (temuan audit 13 Nov 2026)
+
+### 5.1 Seluruh endpoint tidak terproteksi (PRIORITAS TERTINGGI)
+`POST /auth/login` **sudah** menerbitkan JWT sungguhan
+(`jwt.signAsync`, `auth.service.ts:57`), dan aplikasi **sudah** mengirim
+`Authorization: Bearer <token>` + `x-company-id` di setiap permintaan
+(`api_client.dart`). Tetapi backend **tidak pernah memeriksanya**:
+`grep -rn "@UseGuards" backend/src` -> **0 hasil**.
+
+Terbukti, tanpa token sama sekali:
+```
+GET /api/v1/dashboard        -> HTTP 200
+GET /api/v1/finance/invoices -> HTTP 200
+GET /api/v1/settings/overview-> HTTP 200
+```
+Diperparah `PrismaService.resolveCompanyId()`: bila header `x-company-id`
+tidak ada, ia **jatuh ke perusahaan pertama** (`findFirst`), bukan menolak.
+Jadi siapa pun yang bisa menjangkau server membaca seluruh data keuangan
+perusahaan pertama tanpa autentikasi apa pun.
+
+Ini melanggar FR-USR-03 (RBAC dicek di server) dan FR-CMP-05 (isolasi data).
+**Wajib ditutup sebelum backend dipublikasikan ke VPS/internet**, karena saat
+itulah celah ini berubah dari risiko lokal menjadi kebocoran data nyata.
+
+Sisi klien sudah siap: token dan header perusahaan sudah dikirim, jadi
+menambahkan guard + mengambil `companyId` dari token (bukan dari header yang
+bisa dipalsukan) tidak perlu mengubah aplikasi.
+
+### 5.2 Belum ada endpoint laporan
+`FR-RPT-03/04` (export PDF & Excel) adalah **MUST** di PRD, tetapi tidak ada
+rute `/reports`. Layar Laporan di aplikasi masih menampilkan pesan jujur bahwa
+fitur ini aktif setelah backend siap.
+
+### 5.3 OCR invoice belum ada di backend
+`FR-OCR` masih simulasi di sisi aplikasi; belum ada endpoint unggah/ekstraksi.
