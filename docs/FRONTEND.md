@@ -171,6 +171,9 @@ export PDF/Excel benar-benar menghasilkan file.
 - Insight tab icon changed star → `lamp_charge`. Finance localized to ID.
 
 ## Changelog
+- 2026-11-12 (aa) — **Build Release APK (`installer/FreightIntel-AI-v1.0.0-release.apk`) + Pengaturan URL Server di Login**:
+  - `ApiClient` & `LoginScreen`: tambah `setCustomBaseUrl()` dan sheet **"Alamat server API"** di halaman Login agar APK rilis yang dikirim ke klien bisa langsung berjalan mandiri (offline fallback) maupun diarahkan ke URL server publik/tunnel tanpa perlu *rebuild* APK.
+  - `installer/`: buat folder khusus installer berisi `FreightIntel-AI-v1.0.0-release.apk` (`59,7 MB`) dan `PANDUAN_INSTALASI_KLIEN.md` untuk dibagikan via Google Drive.
 - 2026-11-12 (z) — **Sambungkan Dashboard, Detail Shipment P&L, Insight AI, Notifikasi, & Mutasi Pengaturan ke Backend NestJS**:
   - `DashboardScreen`: ambil KPI real-time & shipment sorotan dari `GET /api/v1/dashboard/summary` dan tampilkan nama perusahaan aktif di sheet profil (`Owner · <perusahaan aktif>`).
   - `ShipmentDetailScreen`: ambil rincian item invoice pendapatan & biaya nyata dari `GET /api/v1/shipments/:id/pnl` (dan otomatis refresh setelah mencatat transaksi baru di shipment tersebut).

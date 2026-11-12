@@ -24,6 +24,22 @@ class ApiClient {
   String? companyId;
   bool lastCallOnline = false;
 
+  String get currentBaseUrl => _resolvedBase ?? _candidates.first;
+
+  void setCustomBaseUrl(String? rawUrl) {
+    final trimmed = rawUrl?.trim() ?? '';
+    if (trimmed.isEmpty) {
+      _resolvedBase = null;
+      return;
+    }
+    var normalized =
+        trimmed.endsWith('/') ? trimmed.substring(0, trimmed.length - 1) : trimmed;
+    if (!normalized.endsWith('/api/v1')) {
+      normalized = '$normalized/api/v1';
+    }
+    _resolvedBase = normalized;
+  }
+
   Future<dynamic> get(String path, {Map<String, String>? query}) =>
       _request('GET', path, query: query);
 
