@@ -207,6 +207,9 @@ export PDF/Excel benar-benar menghasilkan file.
     backend dimatikan -> penanda "Angka contoh" muncul dan angka kembali ke 789.
   - **Build klien dinaikkan ke v1.0.1+2** dan APK rilis dibangun ulang, karena
     paket v1.0.0 di `installer/` masih membawa ketiga bug di atas.
+    APK terverifikasi `versionName=1.0.1 versionCode=2` + 5 berkas font Onest.
+    **`.ipa` v1.0.1 masih tertunda** - butuh macOS, dibangun oleh workflow
+    `build-ios.yml` saat push, lalu dipasang ke iPhone dengan `xtool install`.
 - 2026-11-13 (v) — **Skin emulator iPhone 13** (permintaan user, kosmetik).
   - AVD baru `iphone_13`: **1170x2532 @460dpi** (= 390x844pt, persis logical
     size iPhone 13), jadi layout diuji pada proporsi 19,5:9 yang benar, bukan

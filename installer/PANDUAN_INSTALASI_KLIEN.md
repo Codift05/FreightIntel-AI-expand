@@ -1,5 +1,20 @@
 # Panduan Instalasi & Review — FreightIntel AI (v1.0.1)
 
+> ### ⚠️ Status paket v1.0.1
+> | Paket | Status | Cara dibuat |
+> |---|---|---|
+> | `FreightIntel-AI-v1.0.1-release.apk` | **SIAP** | sudah dibangun & diverifikasi (`versionCode=2`) |
+> | `FreightIntel-AI-v1.0.1-iOS.ipa` | **BELUM** | dibangun GitHub Actions saat push, lalu di-sign & dipasang ke iPhone pakai `xtool` |
+>
+> **Langkah `.ipa` (belum dikerjakan, jangan sampai terlewat):**
+> 1. Push branch -> workflow `.github/workflows/build-ios.yml` jalan di macOS.
+> 2. Unduh artefak `.ipa` dari GitHub Release.
+> 3. Simpan ke `installer/FreightIntel-AI-v1.0.1-iOS.ipa`.
+> 4. Pasang ke iPhone: `xtool install "installer/FreightIntel-AI-v1.0.1-iOS.ipa"`.
+>
+> Selama langkah ini belum dilakukan, `.ipa` yang ada di folder masih **v1.0.0**
+> dan Dashboard-nya masih menampilkan angka contoh.
+
 > **Perubahan v1.0.1 (13 Nov 2026):** Dashboard kini menampilkan angka dari
 > server, bukan angka contoh. Saat aplikasi belum terhubung server, kini ada
 > penanda jelas "Angka contoh, belum terhubung server" di bawah sapaan, supaya

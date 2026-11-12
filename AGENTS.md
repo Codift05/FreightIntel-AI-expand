@@ -155,6 +155,12 @@ Penjelasan lengkap di `app/DESIGN.md`. Yang paling sering dilanggar agent:
 - **Periode dashboard**: backend menerima `daily|monthly|yearly`, bukan
   `Harian|Bulanan|Tahunan`.
 - **`companyId` ada di `user.company.id`**, bukan `user.companyId`.
+- **TUGAS TERTUNDA: `.ipa` v1.0.1 belum dibangun.** `installer/` masih berisi
+  `FreightIntel-AI-v1.0.0-iOS.ipa` yang membawa bug Dashboard lama. Alurnya:
+  push -> workflow macOS membangun `.ipa` -> unduh dari GitHub Release ->
+  simpan sebagai `installer/FreightIntel-AI-v1.0.1-iOS.ipa` -> user memasang
+  ke iPhone-nya sendiri dengan `xtool install`. **`.ipa` tidak bisa dibangun
+  dari mesin Linux ini.** Lihat `installer/PANDUAN_INSTALASI_KLIEN.md`.
 - **Build klien di `installer/`**: APK dibangun lokal
   (`flutter build apk --release`), `.ipa` **hanya** dari GitHub Actions
   (`.github/workflows/build-ios.yml`, terpicu saat push). Setiap perbaikan yang
