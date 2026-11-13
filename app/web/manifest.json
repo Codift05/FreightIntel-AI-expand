@@ -1,11 +1,11 @@
 {
-    "name": "freightintel",
-    "short_name": "freightintel",
+    "name": "FreightIntel AI",
+    "short_name": "FreightIntel",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#EFF1F3",
+    "theme_color": "#EFF1F3",
+    "description": "Manajemen keuangan & pengiriman kargo",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

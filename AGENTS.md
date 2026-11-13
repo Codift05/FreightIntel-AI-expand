@@ -41,7 +41,16 @@ Full-stack connected: Flutter frontend (`app/`) + NestJS & Prisma backend (`back
 - **No Co-Authored-By Claude** in commits (user rule).
 
 ## How to run / iterate
-- Emulator AVD `expo_review` (has Pixel 6 device frame skin).
+- Emulator AVD `iphone_13` (skin iPhone 13 buatan sendiri, 1170x2532 @460dpi =
+  390x844pt) atau `expo_review` (Pixel 6, 1080x2400 @420dpi). Skin hanya
+  mengubah bingkai - OS di dalamnya tetap Android.
+- **AVD `iphone_13` disimpan di `/home/mip/.avd-data/`, bukan `~/.android/avd/`.**
+  `~/.android` adalah symlink ke partisi `Workspace` yang 98% penuh (sisa 3,1G),
+  sehingga emulator gagal: `FATAL | Not enough space to create userdata
+  partition`. Jangan pindahkan balik. Kalau membuat AVD baru, taruh di
+  `/home/mip/.avd-data/` dan arahkan `path=` di berkas `.ini`-nya.
+  Mengecilkan `disk.dataPartition.size` **tidak berguna** — emulator menimpanya
+  kembali ke 6G setiap start, dan tetap mengukur ruang di folder `.avd`.
 - `flutter run -d emulator-5554`. Hot reload = send SIGUSR1 to the run process;
   hot restart = SIGUSR2 (needed after changing a `const` class or adding assets).
 - New assets in `pubspec.yaml` need a full rebuild, not hot reload.
@@ -129,3 +138,52 @@ Penjelasan lengkap di `app/DESIGN.md`. Yang paling sering dilanggar agent:
 - Kalau user bertanya "ini kebesaran ga?" atau "ini janggal ga?", dia minta
   **audit dengan angka**, bukan jawaban selera. Ukur dari kode, bandingkan ke
   skala tipe resmi (HIG / Material 3), baru simpulkan.
+
+## Jebakan integrasi app <-> backend (baru, 2026-11-13)
+
+- **Fallback offline itu diam.** Endpoint salah, header hilang, atau server mati
+  terlihat **sama persis** dengan kondisi normal: app tetap menampilkan angka
+  yang masuk akal. Dua bug pernah lolos lama karena ini. Kalau mengubah
+  repository atau endpoint, **buktikan** dengan membandingkan angka di layar
+  terhadap `curl` ke endpoint yang sama - jangan percaya "kelihatan jalan".
+- **Dashboard menampilkan penanda** "Angka contoh, belum terhubung server"
+  saat `ApiClient.lastCallOnline == false`. Jangan dihapus; itu yang membuat
+  salah sambung terlihat.
+- **Sumber kebenaran path = `docs/BACKEND.md` + log boot NestJS**
+  (`grep "Mapped {" ` pada log). Pernah terjadi app memanggil
+  `/dashboard/summary` yang tidak pernah ada.
+- **Periode dashboard**: backend menerima `daily|monthly|yearly`, bukan
+  `Harian|Bulanan|Tahunan`.
+- **`companyId` ada di `user.company.id`**, bukan `user.companyId`.
+- **TUGAS TERTUNDA: `.ipa` v1.0.1 belum dibangun.** `installer/` masih berisi
+  `FreightIntel-AI-v1.0.0-iOS.ipa` yang membawa bug Dashboard lama. Alurnya:
+  push -> workflow macOS membangun `.ipa` -> unduh dari GitHub Release ->
+  simpan sebagai `installer/FreightIntel-AI-v1.0.1-iOS.ipa` -> user memasang
+  ke iPhone-nya sendiri dengan `xtool install`. **`.ipa` tidak bisa dibangun
+  dari mesin Linux ini.** Lihat `installer/PANDUAN_INSTALASI_KLIEN.md`.
+- **`am force-stop` membuang kode hasil hot reload/restart.** Setelah
+  force-stop, emulator menjalankan APK hasil **install terakhir**, bukan kode
+  terbaru - pernah membuat satu jam terbuang mengira perbaikan tidak bekerja.
+  Untuk menguji kode terbaru dari kondisi dingin: jalankan ulang `flutter run`
+  (install ulang), jangan force-stop lalu buka dari launcher.
+- **Rute yang tidak ada tidak melewati guard**, jadi tidak muncul di log guard.
+  Kalau sebuah permintaan "hilang" dari log, curigai path-nya salah.
+- **Izin per-peran ditegakkan server** (`PermissionsGuard`, FR-USR-04). Rute
+  baru yang menyentuh data modul harus diberi `@RequirePermission('MODUL_AKSI')`.
+- **`npm --prefix backend run prisma:seed` MENGHAPUS seluruh tabel.** Selalu
+  `docker exec freightintel-postgres pg_dump -U freightintel -d freightintel_db
+  > backup/<stempel>.sql` lebih dulu. Folder `backup/` di-gitignore.
+- **Menjalankan `npm --prefix backend test` menambah data** (invoice + 2
+  pembayaran per eksekusi), jadi angka dashboard bergeser setelah tiap uji.
+  Itu normal, bukan bug.
+- **Seluruh rute backend wajib token** sejak 13 Nov 2026 (`JwtAuthGuard` global
+  via `APP_GUARD`). Rute baru otomatis ikut terlindungi; pakai `@Public()`
+  hanya bila memang harus terbuka. **Konteks perusahaan diambil dari token**,
+  bukan dari header `x-company-id` (guard menimpanya), jadi jangan percaya
+  header itu. `resolveCompanyId()` melempar `ForbiddenException` bila konteks
+  kosong - jangan kembalikan fallback "perusahaan pertama".
+- **Build klien di `installer/`**: APK dibangun lokal
+  (`flutter build apk --release`), `.ipa` **hanya** dari GitHub Actions
+  (`.github/workflows/build-ios.yml`, terpicu saat push). Setiap perbaikan yang
+  mengenai klien harus diikuti naik versi di `app/pubspec.yaml` + build ulang,
+  kalau tidak klien memakai paket lama yang masih bermasalah.

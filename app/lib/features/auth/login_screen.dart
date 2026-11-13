@@ -82,16 +82,79 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 14),
                 Center(
+                  child: GestureDetector(
+                    onTap: _showServerSheet,
                     child: Text(
-                        'Akun bawaan siap pakai. Tekan Masuk untuk membuka aplikasi.',
-                        style: labelStyle().copyWith(
-                            letterSpacing: 0, fontWeight: FontWeight.w500))),
+                      'Akun bawaan siap pakai · Ketuk untuk atur server',
+                      style: labelStyle().copyWith(
+                          letterSpacing: 0, fontWeight: FontWeight.w500),
+                    ),
+                  ),
+                ),
               ],
             ),
           ),
         ),
       ),
     );
+  }
+
+  void _showServerSheet() {
+    final ctrl = TextEditingController(
+      text: ApiClient.instance.currentBaseUrl,
+    );
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      backgroundColor: AppColors.surface,
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(ctx).bottom),
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 4, 20, 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text('Alamat server API', style: numStyle(size: 16)),
+                const SizedBox(height: 4),
+                const Text(
+                  'Kosongkan untuk otomatis mencoba server lokal atau jalan mandiri (offline).',
+                  style: TextStyle(
+                      color: AppColors.muted, fontSize: 12.5, height: 1.4),
+                ),
+                const SizedBox(height: 14),
+                _field('URL Server (opsional)', Icons.dns_outlined, ctrl),
+                const SizedBox(height: 16),
+                FilledButton(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: AppColors.lime,
+                    foregroundColor: AppColors.ink,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(AppRadii.pill)),
+                  ),
+                  onPressed: () {
+                    ApiClient.instance.setCustomBaseUrl(ctrl.text);
+                    Navigator.of(ctx).pop();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                            'Server diatur ke: ${ApiClient.instance.currentBaseUrl}'),
+                      ),
+                    );
+                  },
+                  child: const Text('Simpan alamat server',
+                      style:
+                          TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    ).whenComplete(ctrl.dispose);
   }
 
   Widget _field(String label, IconData icon, TextEditingController ctrl,

@@ -72,3 +72,159 @@ npm --prefix backend test
 # 4. Jalankan server API di port 4100
 npm --prefix backend run start:dev
 ```
+
+## 5. Celah terbuka (temuan audit 13 Nov 2026)
+
+### 5.1 Seluruh endpoint tidak terproteksi — ✅ DITUTUP 13 Nov 2026
+`POST /auth/login` **sudah** menerbitkan JWT sungguhan
+(`jwt.signAsync`, `auth.service.ts:57`), dan aplikasi **sudah** mengirim
+`Authorization: Bearer <token>` + `x-company-id` di setiap permintaan
+(`api_client.dart`). Tetapi backend **tidak pernah memeriksanya**:
+`grep -rn "@UseGuards" backend/src` -> **0 hasil**.
+
+Terbukti, tanpa token sama sekali:
+```
+GET /api/v1/dashboard        -> HTTP 200
+GET /api/v1/finance/invoices -> HTTP 200
+GET /api/v1/settings/overview-> HTTP 200
+```
+Diperparah `PrismaService.resolveCompanyId()`: bila header `x-company-id`
+tidak ada, ia **jatuh ke perusahaan pertama** (`findFirst`), bukan menolak.
+Jadi siapa pun yang bisa menjangkau server membaca seluruh data keuangan
+perusahaan pertama tanpa autentikasi apa pun.
+
+Ini melanggar FR-USR-03 (RBAC dicek di server) dan FR-CMP-05 (isolasi data).
+**Wajib ditutup sebelum backend dipublikasikan ke VPS/internet**, karena saat
+itulah celah ini berubah dari risiko lokal menjadi kebocoran data nyata.
+
+Sisi klien sudah siap: token dan header perusahaan sudah dikirim, jadi
+menambahkan guard + mengambil `companyId` dari token (bukan dari header yang
+bisa dipalsukan) tidak perlu mengubah aplikasi.
+
+**Perbaikan yang diterapkan:**
+- `src/auth/jwt-auth.guard.ts` (baru) — `JwtAuthGuard` memverifikasi
+  `Authorization: Bearer`, lalu **menimpa** `x-company-id` dengan `companyId`
+  dari dalam token. Header klien tidak lagi dipercaya, dan seluruh controller
+  yang membaca header itu tidak perlu diubah sama sekali.
+- `src/auth/public.decorator.ts` (baru) — `@Public()` untuk rute terbuka.
+- `app.module.ts` — guard dipasang global lewat `APP_GUARD`. Hanya
+  `POST /auth/login` dan `GET /health` yang `@Public()`.
+- `prisma.service.ts` — `resolveCompanyId()` **tidak lagi** jatuh ke
+  perusahaan pertama bila konteks kosong; sekarang melempar
+  `ForbiddenException`. Fallback diam itulah yang membuat kebocoran tak
+  terlihat.
+- `test/verify-api.ts` — seluruh permintaan kini membawa token.
+
+**Hasil uji:**
+```
+TANPA token: /dashboard /finance/invoices /settings/overview
+             /shipments /customers        -> HTTP 401
+PUBLIK     : /health                      -> HTTP 200
+DENGAN token: /dashboard                  -> HTTP 200
+x-company-id dipalsukan ke perusahaan lain -> diabaikan, tetap profitJt=1254
+Suite integrasi                            -> 9/9 LULUS
+Aplikasi di emulator                       -> tetap menampilkan data server
+```
+
+**Belum tercakup (lanjutan):** pengecekan izin per-peran per-modul
+(FR-USR-04) belum ada — token yang sah saat ini boleh mengakses semua
+modul. Super Admin lintas-perusahaan (FR-USR-07) juga belum.
+
+### 5.2 Belum ada endpoint laporan
+`FR-RPT-03/04` (export PDF & Excel) adalah **MUST** di PRD, tetapi tidak ada
+rute `/reports`. Layar Laporan di aplikasi masih menampilkan pesan jujur bahwa
+fitur ini aktif setelah backend siap.
+
+### 5.3 OCR invoice belum ada di backend
+`FR-OCR` masih simulasi di sisi aplikasi; belum ada endpoint unggah/ekstraksi.
+
+### 5.4 Izin per-peran per-modul (FR-USR-04) — ✅ DITUTUP 13 Nov 2026
+
+`PermissionsGuard` global menegakkan izin di server, melengkapi `JwtAuthGuard`.
+
+- `src/auth/permissions.decorator.ts` — `@RequirePermission('SHIPMENT_BUAT')`.
+  Kode mengikuti kolom `permissions.code`: `MODUL_AKSI`, dengan modul
+  `DASHBOARD | SHIPMENT | REVENUE | COST | LAPORAN | CUSTOMER | PENGATURAN`
+  dan aksi `LIHAT | BUAT | UBAH | HAPUS`. Beberapa kode = cukup punya salah satu.
+- `src/auth/permissions.guard.ts` — izin **tidak** ditanam di token, melainkan
+  dibaca dari basis data dengan cache memori TTL 30 detik. Alasannya: perubahan
+  lewat layar "Peran & izin" langsung berlaku tanpa pengguna masuk ulang.
+  Guard juga menolak akun yang sudah dinonaktifkan (`isActive = false`).
+- Rute tanpa `@RequirePermission` tetap terbuka bagi siapa pun yang sudah masuk
+  (mis. `/notifications`, milik pengguna itu sendiri).
+
+**Hasil uji lima peran bawaan:**
+
+| Peran | `/dashboard` | `/settings/overview` | `/customers` | `/finance/invoices` |
+|---|---|---|---|---|
+| Owner | 200 | 200 | 200 | 200 |
+| Finance | 200 | 200 | 200 | 200 |
+| Operasional | 200 | **403** | **403** | **403** |
+| Sales | 200 | **403** | 200 | 200 |
+| Staff | 200 | **403** | **403** | **403** |
+
+Suite integrasi tetap 9/9 lulus.
+
+**Catatan:** peran Finance saat ini punya `PENGATURAN_LIHAT` sehingga bisa
+membuka Pengaturan. Itu keputusan data seed, bukan bug guard — ubah lewat
+layar "Peran & izin" bila tidak dikehendaki.
+
+**Lanjutan di sisi aplikasi:** bila server membalas `403`, repository Flutter
+saat ini diam-diam jatuh ke data contoh. Idealnya layar menampilkan
+"Anda tidak punya akses ke modul ini", bukan angka contoh.
+
+## 6. Laporan & export (FR-RPT) — ✅ 13 Nov 2026
+
+`src/reports/` menambah 3 rute, semuanya `@RequirePermission('LAPORAN_LIHAT')`:
+
+| Rute | Isi |
+|---|---|
+| `GET /reports?period=` | angka laporan JSON, dipakai layar Laporan |
+| `GET /reports/export.xlsx?period=` | 2 lembar: Ringkasan & Tren 6 bulan (FR-RPT-04) |
+| `GET /reports/export.pdf?period=` | laporan siap cetak A4 (FR-RPT-03) |
+
+Angka diambil dari `DashboardService` yang sama dengan layar Dashboard, jadi
+laporan dan aplikasi **tidak mungkin berbeda isi**. Ditambahkan pula data yang
+sebelumnya tidak ada di mana pun: **arus kas** (agregasi tabel `payments`
+arah IN/OUT) dan **biaya per kategori** (`groupBy` tabel `costs`).
+
+Pustaka: `exceljs` dan `pdfkit` (keduanya JS murni, tanpa Chromium).
+
+Diuji: berkas dikenali `file` sebagai *Microsoft Excel 2007+* dan *PDF
+document*; tanpa token 401; peran Staff 403; di emulator tombol PDF
+menghasilkan berkas di perangkat dan terbuka di penampil PDF dengan angka
+yang sama dengan layar.
+
+## 7. KPI pertumbuhan & tren nyata (FR-DSH-03) — ✅ 13 Nov 2026
+
+Sebelumnya **seluruh angka persentase perubahan di aplikasi dipatok di kode**
+(`pl: '14,3%'`, `delta: '8,2%'`, `tumbuh: 12.4`) dan backend tidak mengirim
+data pertumbuhan sama sekali. Badge hijau itu duduk di sebelah angka nyata,
+sehingga terbaca seolah sama sahihnya.
+
+Diperbaiki di `dashboard.service.ts`:
+- **Jendela periode nyata** menggantikan faktor skala karangan
+  (`daily = 1/30`, `yearly = 11.2`). Harian/Bulanan/Tahunan kini memfilter
+  `invoiceDate` betulan terhadap hari/bulan/tahun berjalan.
+- **`revenueGrowthPct`, `profitGrowthPct`, `costRatioPct`, `comparedTo`**
+  dihitung terhadap periode sebelumnya. Bila pembanding nol -> **`null`**,
+  dan aplikasi **menyembunyikan badge** alih-alih menampilkan "0%".
+- **Tren 6 bulan** dihitung per bulan dari `invoiceDate`; sebelumnya lima dari
+  enam bulannya angka tetap.
+
+**Konsekuensi yang harus dipahami:** data seed hanya terbentang Sep-Nov 2026
+dan menumpuk di Oktober, sehingga angka jujurnya terlihat tipis -
+November bermargin 100% (tidak ada biaya bertanggal November) dan empat bulan
+pertama di grafik bernilai 0. Itu keadaan sebenarnya, bukan bug perhitungan.
+**✅ Diselesaikan 13 Nov 2026:** `prisma/seed.ts` kini menyebar tiap shipment
+ke 6 bulan terakhir (`bulanIdx = 5 + (i % 6)`, Jun-Nov 2026). Biaya bertanggal
+di bulan yang sama dengan pendapatannya (+2 hari), pembayaran +5 hari, dan
+nomor invoice/ETD/ETA mengikuti bulannya (`INV/2607/...`, bukan `INV/2610/...`
+untuk semua).
+
+Hasil: keenam bulan terisi pendapatan **dan** biaya, margin kembali wajar
+(50,4%, sebelumnya 100%), dan pertumbuhan punya pembanding nyata.
+
+**Sebelum seed dijalankan, basis data dicadangkan** ke `backup/*.sql`
+(`pg_dump`, 18 tabel). Folder `backup/` di-gitignore. Seed menghapus seluruh
+tabel, jadi selalu cadangkan dulu.

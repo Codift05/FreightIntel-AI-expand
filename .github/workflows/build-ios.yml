@@ -1,0 +1,83 @@
+name: Build iOS IPA & iOS Web App
+
+on:
+  push:
+    branches:
+      - "**"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-ios-ipa:
+    name: Build iOS IPA (for xtool install on iPhone)
+    runs-on: macos-latest
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Install Flutter dependencies
+        run: flutter pub get
+
+      - name: Build iOS release (no codesign)
+        run: flutter build ios --release --no-codesign
+
+      - name: Package Runner.app into .ipa
+        run: |
+          mkdir -p build/ios/ipa_out/Payload
+          cp -r build/ios/iphoneos/Runner.app build/ios/ipa_out/Payload/
+          cd build/ios/ipa_out
+          zip -r9 FreightIntel-AI-v1.0.0-iOS.ipa Payload
+
+      - name: Upload iOS .ipa Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: FreightIntel-AI-v1.0.0-iOS-ipa
+          path: app/build/ios/ipa_out/FreightIntel-AI-v1.0.0-iOS.ipa
+          if-no-files-found: error
+
+      - name: Publish .ipa to GitHub Release v1.0.0
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.0.0
+          name: "FreightIntel AI v1.0.0 (iOS IPA & Android)"
+          files: app/build/ios/ipa_out/FreightIntel-AI-v1.0.0-iOS.ipa
+
+  build-ios-webapp:
+    name: Build iOS Safari Web App (PWA)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Install Flutter dependencies
+        run: flutter pub get
+
+      - name: Build Flutter Web (iOS PWA)
+        run: flutter build web --release --base-href "/FreightIntel-AI-expand/"
+
+      - name: Upload iOS Web App Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: FreightIntel-AI-v1.0.0-iOS-WebApp
+          path: app/build/web
+          if-no-files-found: error

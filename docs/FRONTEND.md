@@ -37,8 +37,12 @@ chat Tanya AI) — itu keputusan sadar, bukan pekerjaan setengah jadi. Jangan
 - No state-management lib yet; screens use `StatefulWidget` + in-memory repos.
 
 ## Run
-- Emulator: AVD `expo_review` (Pixel 6 skin → device frame),
-  `flutter run -d emulator-5554`.
+- Emulator: AVD **`iphone_13`** (skin iPhone 13 buatan sendiri, 1170x2532
+  @460dpi = 390x844pt, proporsi 19,5:9) atau `expo_review` (Pixel 6,
+  1080x2400 @420dpi). `flutter run -d emulator-5554`.
+  Skin ada di `android-sdk/skins/iphone_13/` (`back.png`, `mask.png`, `layout`)
+  dan **digambar ulang lewat skrip**, bukan aset unduhan — lihat Changelog (v).
+  Catatan: skin hanya mengubah bingkai; OS di dalamnya tetap Android.
 - HP uji: OPPO A9 2020 / CPH1937, `flutter run -d c7a35bc8`. **Tidak ada
   internet di HP ini** — apa pun yang ambil sumber daya dari jaringan saat
   runtime akan gagal.
@@ -171,6 +175,106 @@ export PDF/Excel benar-benar menghasilkan file.
 - Insight tab icon changed star → `lamp_charge`. Finance localized to ID.
 
 ## Changelog
+- 2026-11-13 (y) — **Export laporan berfungsi + semua angka pertumbuhan palsu
+  dibuang.** Rincian backend di `docs/BACKEND.md` 6 & 7.
+  - Layar Laporan kini membaca `GET /reports`, jadi isinya **identik** dengan
+    berkas export. Sebelumnya layar memakai angka demo sementara berkas berisi
+    angka server - satu tombol, dua angka berbeda.
+  - Tombol PDF/Excel benar-benar mengunduh: `ApiClient.download()` (timeout 20
+    detik, bukan 1500 ms seperti permintaan JSON) -> simpan via
+    `path_provider` -> buka via `open_filex`. Paket baru: `path_provider`,
+    `open_filex`.
+  - **Angka pertumbuhan di seluruh aplikasi kini dari server.** Yang dibuang:
+    `pl: '14,3%'` di kartu hero, `delta: '8,2%' / '3,1%' / '4,0%'` di StatTile,
+    `tumbuh: 12.4 / 18.6 / 9.2` di Laporan. Bila server mengirim `null`,
+    **badge disembunyikan** - tidak ada lagi "0%" yang menyesatkan. Record
+    fallback offline juga dibersihkan dari angka pertumbuhan.
+  - Bug yang nyaris lolos: `_bulanan`/`_tahun` di Laporan dideklarasikan
+    `static const`, sehingga diisi data server akan **crash saat runtime**;
+    `flutter analyze` tidak menangkapnya. Diubah jadi list mutable.
+  - **Terverifikasi di emulator**: Dashboard `Rp 790 jt · 1,3% · margin 100,0%`
+    dan Pendapatan `79,3% vs bulan lalu` (merah, turun) - semua cocok dengan
+    `GET /dashboard`. Tombol PDF menghasilkan
+    `Laporan-FreightIntel-*.pdf` (2325 byte) yang terbuka di penampil PDF
+    perangkat dengan angka yang sama.
+- 2026-11-13 (x) — **RBAC ditegakkan di server (FR-USR-04)**. Rinciannya di
+  `docs/BACKEND.md` 5.4. Dampak ke frontend: bila server membalas `403`,
+  repository saat ini **diam-diam jatuh ke data contoh**. Dashboard sudah
+  punya penanda "Angka contoh, belum terhubung server", tetapi layar lain
+  belum - idealnya menampilkan "Anda tidak punya akses ke modul ini".
+  Dicatat sebagai utang, belum dikerjakan.
+  - Verifikasi akhir di emulator dengan **install ulang** (bukan hot restart):
+    layar menampilkan `profit=1570 jt margin=34,1% shipment=20`, identik
+    dengan `GET /dashboard?period=monthly`.
+- 2026-11-13 (w) — **Dashboard akhirnya memakai data server + penanda jujur
+  saat fallback** (temuan dari audit menyeluruh frontend<->backend).
+  - **Bug 1 (utama): Dashboard selalu menampilkan angka contoh.** App memanggil
+    `GET /dashboard/summary`, padahal backend hanya punya `GET /dashboard`
+    (lihat `docs/BACKEND.md` baris 40 - dokumentasinya sudah benar, app-nya
+    yang salah). Hasilnya 404 -> `_loadLiveSummary()` `return` diam-diam ->
+    nilai default `?? 789`, `?? 24.6`, `?? 636` yang terpakai. Terbukti: server
+    melaporkan laba **Rp 1254 jt / margin 29,3% / 20 shipment**, layar
+    menampilkan **Rp 789 jt / 24,6% / 128 shipment**.
+  - Memperbaiki path saja tidak cukup, bentuk datanya juga beda:
+    app membaca `kpis.netProfitJt` + `activeShipments`, backend mengirim
+    `metrics.profitJt` + `activeShipmentsCount`. Keduanya dipetakan ulang.
+  - Periode juga salah: app mengirim `period=Bulanan`, backend menerima
+    `daily|monthly|yearly`. Ditambah peta `_periodApi` dan **ketiga periode**
+    kini dimuat dari server (sebelumnya hanya Bulanan).
+  - **Bug 2: isolasi antar-perusahaan tidak pernah aktif.** `ApiClient.login()`
+    membaca `user['companyId']`, backend mengirim `user.company.id`. Akibatnya
+    `companyId` selalu null dan header `x-company-id` tidak pernah dikirim,
+    padahal `analytics.controller.ts` membacanya (BR-10 / FR-CMP-05). Sekarang
+    membaca objek bersarang, dengan bentuk datar tetap diterima.
+  - **Bug 3: fallback offline tidak bersuara.** Endpoint salah, header hilang,
+    atau server mati terlihat identik dengan kondisi normal - itu sebabnya dua
+    bug di atas lolos lama. Dashboard kini menampilkan
+    "Angka contoh, belum terhubung server" + titik amber saat
+    `ApiClient.lastCallOnline == false`. Ini sekaligus menutup pelanggaran
+    aturan AGENTS.md ("demo data is labelled honestly") yang selama ini terjadi
+    diam-diam.
+  - **Terverifikasi di emulator**: online -> `Rp 1254 jt`, `29,3%`,
+    `20 shipment`, `Rp 4,3 M`, `Rp 3,0 M` (cocok dengan `/dashboard`);
+    backend dimatikan -> penanda "Angka contoh" muncul dan angka kembali ke 789.
+  - **Build klien dinaikkan ke v1.0.1+2** dan APK rilis dibangun ulang, karena
+    paket v1.0.0 di `installer/` masih membawa ketiga bug di atas.
+    APK terverifikasi `versionName=1.0.1 versionCode=2` + 5 berkas font Onest.
+    **`.ipa` v1.0.1 masih tertunda** - butuh macOS, dibangun oleh workflow
+    `build-ios.yml` saat push, lalu dipasang ke iPhone dengan `xtool install`.
+- 2026-11-13 (v) — **Skin emulator iPhone 13** (permintaan user, kosmetik).
+  - AVD baru `iphone_13`: **1170x2532 @460dpi** (= 390x844pt, persis logical
+    size iPhone 13), jadi layout diuji pada proporsi 19,5:9 yang benar, bukan
+    cuma bingkainya yang berubah.
+  - Skin di `android-sdk/skins/iphone_13/`: `back.png` (bodi 1330x2656, rangka
+    stainless 3 lapis, 4 tombol samping), `mask.png` (overlay 1170x2532 yang
+    membulatkan sudut radius 142 + menggambar poni 486x96), dan `layout`
+    (offset layar x=80 y=62). Digambar dengan PIL + supersampling 2x.
+    **Tanpa logo/merek Apple** - hanya bentuk bodi.
+  - **Masalah disk & cara benar mengatasinya.** Emulator menolak jalan:
+    `FATAL | Not enough space to create userdata partition. Available: 3131 MB
+    ... need 7372.80 MB`. Sebabnya **bukan** ukuran partisi: `~/.android` adalah
+    symlink ke `/home/mip/Workspace/.android`, dan partisi `Workspace`
+    (`nvme0n1p1`, 156G) **98% penuh, sisa 3,1G** — sementara `/` masih 9,5G.
+    Dua tuas ini **tidak berguna, jangan diulang**: mengecilkan
+    `disk.dataPartition.size` (emulator menimpanya kembali ke 6G setiap start)
+    dan mengarahkan `disk.dataPartition.path` (emulator tetap mengukur ruang
+    kosong di folder `.avd` miliknya).
+    **Yang berhasil**: pindahkan seluruh folder AVD ke filesystem yang lega —
+    `iphone_13.avd` sekarang di `/home/mip/.avd-data/`, dan
+    `~/.android/avd/iphone_13.ini` berisi
+    `path=/home/mip/.avd-data/iphone_13.avd`. `expo_review.avd` tidak disentuh.
+  - **Terverifikasi jalan**: `adb shell wm size` -> `1170x2532`,
+    `wm density` -> `460`.
+  - **Batas yang perlu dipahami**: skin hanya bingkai. OS tetap Android, jadi
+    status bar, gestur, dan font sistem tetap Android. Ini untuk melihat
+    proporsi dan rasa layar iPhone, bukan pengganti uji di perangkat iOS asli.
+- 2026-11-12 (ab) — **Dukungan Penuh iOS (`.ipa` via GitHub Actions macOS + `xtool` di Linux & iOS Web App PWA)**:
+  - `lib/core/network/api_client.dart` & `pubspec.yaml`: migrasi dari `dart:io` ke `package:http` agar `ApiClient` berjalan lintas-platform di Android, iOS (`.ipa`), dan Web (Safari iOS PWA).
+  - `ios/Runner/Info.plist` & `web/index.html` + `web/manifest.json`: set `CFBundleDisplayName` ke `FreightIntel AI`, aktifkan `NSAllowsArbitraryLoads` di iOS, dan lengkapi metadata standalone PWA iOS.
+  - `.github/workflows/build-ios.yml`: workflow otomatis di `macos-latest` untuk mem-build `FreightIntel-AI-v1.0.0-iOS.ipa` (siap di-sign & install ke iPhone via `xtool install`) serta bundel Web App iOS.
+- 2026-11-12 (aa) — **Build Release APK (`installer/FreightIntel-AI-v1.0.0-release.apk`) + Pengaturan URL Server di Login**:
+  - `ApiClient` & `LoginScreen`: tambah `setCustomBaseUrl()` dan sheet **"Alamat server API"** di halaman Login agar APK rilis yang dikirim ke klien bisa langsung berjalan mandiri (offline fallback) maupun diarahkan ke URL server publik/tunnel tanpa perlu *rebuild* APK.
+  - `installer/`: buat folder khusus installer berisi `FreightIntel-AI-v1.0.0-release.apk` (`59,7 MB`) dan `PANDUAN_INSTALASI_KLIEN.md` untuk dibagikan via Google Drive.
 - 2026-11-12 (z) — **Sambungkan Dashboard, Detail Shipment P&L, Insight AI, Notifikasi, & Mutasi Pengaturan ke Backend NestJS**:
   - `DashboardScreen`: ambil KPI real-time & shipment sorotan dari `GET /api/v1/dashboard/summary` dan tampilkan nama perusahaan aktif di sheet profil (`Owner · <perusahaan aktif>`).
   - `ShipmentDetailScreen`: ambil rincian item invoice pendapatan & biaya nyata dari `GET /api/v1/shipments/:id/pnl` (dan otomatis refresh setelah mencatat transaksi baru di shipment tersebut).

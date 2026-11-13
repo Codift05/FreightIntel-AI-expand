@@ -7,5 +7,6 @@ import { ShipmentsModule } from '../shipments/shipments.module';
   imports: [ShipmentsModule],
   controllers: [DashboardController],
   providers: [DashboardService],
+  exports: [DashboardService],
 })
 export class DashboardModule {}

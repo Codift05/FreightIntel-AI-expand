@@ -35,3 +35,13 @@ backend/node_modules/
 backend/dist/
 backend/.pgdata/
 backend/.env
+
+# Binary installer APK & IPA (disimpan lokal untuk Google Drive / xtool iPhone)
+installer/*.apk
+installer/*.ipa
+
+# Log sementara sesi debug (emulator, backend, build)
+.emulog/
+
+# Cadangan basis data (jangan masuk repo)
+backup/

@@ -21,7 +21,15 @@ typedef _PData = ({
   String profit,
   String profitFull,
   String sub,
-  String pl,
+  // Persentase pertumbuhan. null = tidak ada pembanding, badge disembunyikan.
+  // Tidak pernah diisi angka patokan (lihat AGENTS.md: dilarang angka karangan).
+  String? pl,
+  bool plUp,
+  String? revDelta,
+  bool revUp,
+  String? costDelta,
+  bool costUp,
+  String deltaNote,
   String rev,
   String revU,
   String cost,
@@ -65,7 +73,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
       profit: 'Rp 26 jt',
       profitFull: 'Rp 26.450.000',
       sub: 'Margin 23,1% · 18 shipment',
-      pl: '9,4%',
+      pl: null,
+      plUp: true,
+      revDelta: null,
+      revUp: true,
+      costDelta: null,
+      costUp: true,
+      deltaNote: 'vs periode lalu',
       rev: 'Rp 112',
       revU: 'jt',
       cost: 'Rp 86',
@@ -82,7 +96,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
       profit: 'Rp 789 jt',
       profitFull: 'Rp 789.300.000',
       sub: 'Margin 24,6% · 128 shipment',
-      pl: '14,3%',
+      pl: null,
+      plUp: true,
+      revDelta: null,
+      revUp: true,
+      costDelta: null,
+      costUp: true,
+      deltaNote: 'vs periode lalu',
       rev: 'Rp 3,2',
       revU: 'M',
       cost: 'Rp 2,4',
@@ -99,7 +119,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
       profit: 'Rp 9,2 M',
       profitFull: 'Rp 9.214.000.000',
       sub: 'Margin 25,3% · 214 shipment',
-      pl: '18,1%',
+      pl: null,
+      plUp: true,
+      revDelta: null,
+      revUp: true,
+      costDelta: null,
+      costUp: true,
+      deltaNote: 'vs periode lalu',
       rev: 'Rp 38',
       revU: 'M',
       cost: 'Rp 28',
@@ -117,33 +143,63 @@ class _DashboardScreenState extends State<DashboardScreen> {
     _loadLiveSummary();
   }
 
+  /// Format persen untuk badge. null tetap null supaya badge disembunyikan,
+  /// bukan ditampilkan sebagai "0%" yang menyesatkan.
+  static String? _pct(dynamic v) {
+    if (v is! num) return null;
+    return '${v.abs().toStringAsFixed(1).replaceAll('.', ',')}%';
+  }
+
+  /// Periode UI -> nilai yang dimengerti backend (`daily|monthly|yearly`).
+  static const _periodApi = ['daily', 'monthly', 'yearly'];
+
+  /// false = angka yang tampil berasal dari data contoh, bukan server.
+  bool _live = false;
+
   Future<void> _loadLiveSummary() async {
+    // Muat ketiga periode sekaligus supaya swipe Harian/Bulanan/Tahunan
+    // menampilkan angka server, bukan hanya Bulanan.
+    for (var i = 0; i < _periodApi.length; i++) {
+      await _loadPeriod(i);
+    }
+    if (mounted) setState(() => _live = ApiClient.instance.lastCallOnline);
+  }
+
+  Future<void> _loadPeriod(int idx) async {
     final res = await ApiClient.instance
-        .get('/dashboard/summary', query: {'period': 'Bulanan'});
+        .get('/dashboard', query: {'period': _periodApi[idx]});
     if (!mounted || res is! Map<String, dynamic>) return;
-    final kpis = res['kpis'];
+    final kpis = res['metrics'];
     final feat = res['featuredShipment'];
     setState(() {
       if (feat is Map<String, dynamic>) {
         _featured = Shipment.fromJson(feat);
       }
       if (kpis is Map<String, dynamic>) {
-        final netJt = (kpis['netProfitJt'] as num?)?.toInt() ?? 789;
+        final base = _periods[idx];
+        final netJt = (kpis['profitJt'] as num?)?.toInt() ?? 789;
         final revJt = (kpis['revenueJt'] as num?)?.toInt() ?? 3200;
         final costJt = (kpis['costJt'] as num?)?.toInt() ?? 2400;
         final arJt = (kpis['receivablesJt'] as num?)?.toInt() ?? 636;
         final apJt = (kpis['payablesJt'] as num?)?.toInt() ?? 1800;
         final margin = (kpis['marginPct'] as num?)?.toDouble() ?? 24.6;
-        final activeShp = (res['activeShipments'] as num?)?.toInt() ?? 20;
-        _periods[1] = (
-          name: 'Bulanan',
-          dateLabel: 'November 2026',
-          hero: 'Laba bersih bulan ini',
+        final activeShp =
+            (res['activeShipmentsCount'] as num?)?.toInt() ?? 20;
+        _periods[idx] = (
+          name: base.name,
+          dateLabel: base.dateLabel,
+          hero: base.hero,
           profit: 'Rp $netJt jt',
           profitFull: 'Rp ${netJt * 1000}.000',
           sub:
               'Margin ${margin.toStringAsFixed(1).replaceAll('.', ',')}% · $activeShp shipment',
-          pl: '14,3%',
+          pl: _pct(kpis['profitGrowthPct']),
+          plUp: ((kpis['profitGrowthPct'] as num?) ?? 0) >= 0,
+          revDelta: _pct(kpis['revenueGrowthPct']),
+          revUp: ((kpis['revenueGrowthPct'] as num?) ?? 0) >= 0,
+          costDelta: null,
+          costUp: true,
+          deltaNote: 'vs ${res['metrics']['comparedTo'] ?? 'periode lalu'}',
           rev: revJt >= 1000
               ? 'Rp ${(revJt / 1000).toStringAsFixed(1).replaceAll('.', ',')}'
               : 'Rp $revJt',
@@ -338,8 +394,24 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                 ),
                 const SizedBox(height: 2),
-                const Text('Ringkasan keuangan kargo',
-                    style: TextStyle(color: AppColors.muted, fontSize: 12.5)),
+                if (_live)
+                  const Text('Ringkasan keuangan kargo',
+                      style: TextStyle(color: AppColors.muted, fontSize: 12.5))
+                else
+                  Row(
+                    children: [
+                      Container(
+                        width: 6,
+                        height: 6,
+                        decoration: const BoxDecoration(
+                            color: AppColors.warning, shape: BoxShape.circle),
+                      ),
+                      const SizedBox(width: 6),
+                      const Text('Angka contoh, belum terhubung server',
+                          style: TextStyle(
+                              color: AppColors.muted, fontSize: 12.5)),
+                    ],
+                  ),
               ],
             ),
           ),
@@ -428,6 +500,7 @@ class _PeriodPageState extends State<_PeriodPage>
           valueFull: p.profitFull,
           sub: p.sub,
           delta: p.pl,
+          deltaUp: p.plUp,
         ),
         const SizedBox(height: 12),
         Row(
@@ -437,10 +510,10 @@ class _PeriodPageState extends State<_PeriodPage>
                     label: 'Pendapatan',
                     value: p.rev,
                     unit: p.revU,
-                    delta: '8,2%',
-                    deltaUp: true,
-                    deltaGood: true,
-                    deltaNote: '7 hari terakhir')),
+                    delta: p.revDelta,
+                    deltaUp: p.revUp,
+                    deltaGood: p.revUp,
+                    deltaNote: p.deltaNote)),
             const SizedBox(width: 14),
             Expanded(
                 child: StatTile(
@@ -448,10 +521,10 @@ class _PeriodPageState extends State<_PeriodPage>
                     value: p.cost,
                     unit: p.costU,
                     valueColor: AppColors.loss,
-                    delta: '3,1%',
-                    deltaUp: true,
+                    delta: p.costDelta,
+                    deltaUp: p.costUp,
                     deltaGood: false,
-                    deltaNote: '7 hari terakhir')),
+                    deltaNote: p.deltaNote)),
           ],
         ),
         const SizedBox(height: 12),
@@ -462,20 +535,16 @@ class _PeriodPageState extends State<_PeriodPage>
                     label: 'Piutang',
                     value: p.piu,
                     unit: p.piuU,
-                    delta: '4,0%',
-                    deltaUp: false,
-                    deltaGood: true,
-                    deltaNote: 'vs bulan lalu')),
+                    delta: null,
+                    deltaNote: p.deltaNote)),
             const SizedBox(width: 14),
             Expanded(
                 child: StatTile(
                     label: 'Hutang',
                     value: p.hut,
                     unit: p.hutU,
-                    delta: '6,0%',
-                    deltaUp: false,
-                    deltaGood: true,
-                    deltaNote: 'vs bulan lalu')),
+                    delta: null,
+                    deltaNote: p.deltaNote)),
           ],
         ),
         const SizedBox(height: 16),

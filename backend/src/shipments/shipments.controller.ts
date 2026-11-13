@@ -1,6 +1,7 @@
 import { Body, Controller, Get, Headers, Param, Patch, Post, Query } from '@nestjs/common';
 import { ShipmentsService } from './shipments.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { RequirePermission } from '../auth/permissions.decorator';
 
 @Controller('shipments')
 export class ShipmentsController {
@@ -9,6 +10,7 @@ export class ShipmentsController {
     private readonly prisma: PrismaService,
   ) {}
 
+  @RequirePermission('SHIPMENT_LIHAT')
   @Get()
   async list(
     @Headers('x-company-id') companyHeader?: string,
@@ -26,6 +28,7 @@ export class ShipmentsController {
     });
   }
 
+  @RequirePermission('SHIPMENT_LIHAT')
   @Get(':id/pnl')
   async getPnl(
     @Headers('x-company-id') companyHeader: string | undefined,
@@ -35,6 +38,7 @@ export class ShipmentsController {
     return this.shipments.findOnePnl(companyId, id);
   }
 
+  @RequirePermission('SHIPMENT_BUAT')
   @Post()
   async create(
     @Headers('x-company-id') companyHeader: string | undefined,
@@ -53,6 +57,7 @@ export class ShipmentsController {
     return this.shipments.create(companyId, body);
   }
 
+  @RequirePermission('SHIPMENT_UBAH')
   @Patch(':id')
   async update(
     @Headers('x-company-id') companyHeader: string | undefined,

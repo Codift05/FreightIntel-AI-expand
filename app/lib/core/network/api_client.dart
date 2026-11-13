@@ -1,15 +1,18 @@
 import 'dart:convert';
-import 'dart:io';
+import 'dart:typed_data';
+import 'package:http/http.dart' as http;
 
-/// HTTP client ringan berbasis `dart:io` menuju backend NestJS (`/api/v1`).
+/// HTTP client lintas-platform (Android, iOS `.ipa`, & Web/Safari iOS PWA)
+/// berbasis `package:http` menuju backend NestJS (`/api/v1`).
 ///
 /// Menangani:
-/// - Resolusi host otomatis: `127.0.0.1:4100` (desktop / `adb reverse` HP fisik
-///   atau emulator) dan `10.0.2.2:4100` (Android emulator default bridge).
+/// - Resolusi host otomatis: `127.0.0.1:4100` (desktop / iOS / `adb reverse`)
+///   dan `10.0.2.2:4100` (Android emulator default bridge), atau URL server
+///   kustom yang diatur lewat layar Login.
 /// - Header `x-company-id` untuk isolasi multi-perusahaan (PRD BR-10).
-/// - Timeout cepat (`1200ms`) agar saat peranti benar-benar offline (mis. HP uji
-///   tanpa internet/USB), repository langsung jatuh ke data fallback tanpa jeda
-///   panjang.
+/// - Timeout cepat (`1500ms`) agar saat peranti benar-benar offline (mis. HP
+///   klien tanpa koneksi ke server), repository langsung jatuh ke data
+///   fallback tanpa jeda panjang.
 class ApiClient {
   ApiClient._();
   static final instance = ApiClient._();
@@ -24,8 +27,56 @@ class ApiClient {
   String? companyId;
   bool lastCallOnline = false;
 
+  String get currentBaseUrl => _resolvedBase ?? _candidates.first;
+
+  void setCustomBaseUrl(String? rawUrl) {
+    final trimmed = rawUrl?.trim() ?? '';
+    if (trimmed.isEmpty) {
+      _resolvedBase = null;
+      return;
+    }
+    var normalized =
+        trimmed.endsWith('/') ? trimmed.substring(0, trimmed.length - 1) : trimmed;
+    if (!normalized.endsWith('/api/v1')) {
+      normalized = '$normalized/api/v1';
+    }
+    _resolvedBase = normalized;
+  }
+
   Future<dynamic> get(String path, {Map<String, String>? query}) =>
       _request('GET', path, query: query);
+
+  /// Unduh berkas biner (mis. laporan PDF/XLSX) memakai sesi yang sama.
+  /// Mengembalikan null bila server tidak terjangkau atau menolak akses.
+  Future<Uint8List?> download(String path, {Map<String, String>? query}) async {
+    final bases = _resolvedBase != null
+        ? <String>[_resolvedBase!, ..._candidates.where((c) => c != _resolvedBase)]
+        : _candidates;
+    final headers = <String, String>{
+      if (companyId != null && companyId!.isNotEmpty) 'x-company-id': companyId!,
+      if (accessToken != null && accessToken!.isNotEmpty)
+        'Authorization': 'Bearer $accessToken',
+    };
+    for (final base in bases) {
+      try {
+        final uri = Uri.parse('$base$path').replace(queryParameters: query);
+        // Unduhan berkas butuh waktu lebih dari timeout 1500ms permintaan JSON.
+        final res = await http
+            .get(uri, headers: headers)
+            .timeout(const Duration(seconds: 20));
+        lastCallOnline = true;
+        if (res.statusCode == 200 && res.bodyBytes.isNotEmpty) {
+          _resolvedBase ??= base;
+          return res.bodyBytes;
+        }
+        return null; // 401/403 tidak perlu dicoba ke host lain
+      } catch (_) {
+        continue;
+      }
+    }
+    lastCallOnline = false;
+    return null;
+  }
 
   Future<dynamic> post(String path, {Map<String, dynamic>? body}) =>
       _request('POST', path, body: body);
@@ -42,7 +93,13 @@ class ApiClient {
       accessToken = res['accessToken'] as String?;
       final user = res['user'];
       if (user is Map<String, dynamic>) {
-        companyId = user['companyId'] as String?;
+        // Backend mengirim perusahaan sebagai objek bersarang
+        // (`user.company.id`). Bentuk datar `user.companyId` tetap diterima
+        // supaya klien lama/baru sama-sama jalan.
+        final company = user['company'];
+        companyId = company is Map<String, dynamic>
+            ? company['id'] as String?
+            : user['companyId'] as String?;
       }
       return res;
     }
@@ -62,44 +119,40 @@ class ApiClient {
           ]
         : _candidates;
 
+    final headers = <String, String>{
+      'Accept': 'application/json',
+      if (companyId != null && companyId!.isNotEmpty)
+        'x-company-id': companyId!,
+      if (accessToken != null && accessToken!.isNotEmpty)
+        'Authorization': 'Bearer $accessToken',
+      if (body != null) 'Content-Type': 'application/json; charset=utf-8',
+    };
+    final encodedBody = body != null ? jsonEncode(body) : null;
+
     for (final base in bases) {
-      final client = HttpClient()
-        ..connectionTimeout = const Duration(milliseconds: 1200);
       try {
         var uri = Uri.parse('$base$path');
         if (query != null && query.isNotEmpty) {
           uri = uri.replace(queryParameters: query);
         }
-        final req = await client
-            .openUrl(method, uri)
-            .timeout(const Duration(milliseconds: 1800));
-        req.headers.set(HttpHeaders.acceptHeader, 'application/json');
-        if (companyId != null && companyId!.isNotEmpty) {
-          req.headers.set('x-company-id', companyId!);
-        }
-        if (accessToken != null && accessToken!.isNotEmpty) {
-          req.headers
-              .set(HttpHeaders.authorizationHeader, 'Bearer $accessToken');
-        }
-        if (body != null) {
-          final encoded = utf8.encode(jsonEncode(body));
-          req.headers.set(
-              HttpHeaders.contentTypeHeader, 'application/json; charset=utf-8');
-          req.contentLength = encoded.length;
-          req.add(encoded);
-        }
-        final res =
-            await req.close().timeout(const Duration(milliseconds: 2500));
-        final text = await res.transform(utf8.decoder).join();
+        const timeout = Duration(milliseconds: 1500);
+        final http.Response res = switch (method) {
+          'POST' => await http
+              .post(uri, headers: headers, body: encodedBody)
+              .timeout(timeout),
+          'PATCH' => await http
+              .patch(uri, headers: headers, body: encodedBody)
+              .timeout(timeout),
+          _ => await http.get(uri, headers: headers).timeout(timeout),
+        };
         if (res.statusCode >= 200 && res.statusCode < 300) {
           _resolvedBase = base;
           lastCallOnline = true;
+          final text = utf8.decode(res.bodyBytes);
           return text.isEmpty ? null : jsonDecode(text);
         }
       } catch (_) {
         // Coba kandidat berikutnya atau jatuh ke offline fallback di repository.
-      } finally {
-        client.close(force: true);
       }
     }
     lastCallOnline = false;
