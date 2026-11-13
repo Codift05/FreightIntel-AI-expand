@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:typed_data';
 import 'package:http/http.dart' as http;
 
 /// HTTP client lintas-platform (Android, iOS `.ipa`, & Web/Safari iOS PWA)
@@ -44,6 +45,38 @@ class ApiClient {
 
   Future<dynamic> get(String path, {Map<String, String>? query}) =>
       _request('GET', path, query: query);
+
+  /// Unduh berkas biner (mis. laporan PDF/XLSX) memakai sesi yang sama.
+  /// Mengembalikan null bila server tidak terjangkau atau menolak akses.
+  Future<Uint8List?> download(String path, {Map<String, String>? query}) async {
+    final bases = _resolvedBase != null
+        ? <String>[_resolvedBase!, ..._candidates.where((c) => c != _resolvedBase)]
+        : _candidates;
+    final headers = <String, String>{
+      if (companyId != null && companyId!.isNotEmpty) 'x-company-id': companyId!,
+      if (accessToken != null && accessToken!.isNotEmpty)
+        'Authorization': 'Bearer $accessToken',
+    };
+    for (final base in bases) {
+      try {
+        final uri = Uri.parse('$base$path').replace(queryParameters: query);
+        // Unduhan berkas butuh waktu lebih dari timeout 1500ms permintaan JSON.
+        final res = await http
+            .get(uri, headers: headers)
+            .timeout(const Duration(seconds: 20));
+        lastCallOnline = true;
+        if (res.statusCode == 200 && res.bodyBytes.isNotEmpty) {
+          _resolvedBase ??= base;
+          return res.bodyBytes;
+        }
+        return null; // 401/403 tidak perlu dicoba ke host lain
+      } catch (_) {
+        continue;
+      }
+    }
+    lastCallOnline = false;
+    return null;
+  }
 
   Future<dynamic> post(String path, {Map<String, dynamic>? body}) =>
       _request('POST', path, body: body);

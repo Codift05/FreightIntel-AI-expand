@@ -172,3 +172,49 @@ layar "Peran & izin" bila tidak dikehendaki.
 **Lanjutan di sisi aplikasi:** bila server membalas `403`, repository Flutter
 saat ini diam-diam jatuh ke data contoh. Idealnya layar menampilkan
 "Anda tidak punya akses ke modul ini", bukan angka contoh.
+
+## 6. Laporan & export (FR-RPT) — ✅ 13 Nov 2026
+
+`src/reports/` menambah 3 rute, semuanya `@RequirePermission('LAPORAN_LIHAT')`:
+
+| Rute | Isi |
+|---|---|
+| `GET /reports?period=` | angka laporan JSON, dipakai layar Laporan |
+| `GET /reports/export.xlsx?period=` | 2 lembar: Ringkasan & Tren 6 bulan (FR-RPT-04) |
+| `GET /reports/export.pdf?period=` | laporan siap cetak A4 (FR-RPT-03) |
+
+Angka diambil dari `DashboardService` yang sama dengan layar Dashboard, jadi
+laporan dan aplikasi **tidak mungkin berbeda isi**. Ditambahkan pula data yang
+sebelumnya tidak ada di mana pun: **arus kas** (agregasi tabel `payments`
+arah IN/OUT) dan **biaya per kategori** (`groupBy` tabel `costs`).
+
+Pustaka: `exceljs` dan `pdfkit` (keduanya JS murni, tanpa Chromium).
+
+Diuji: berkas dikenali `file` sebagai *Microsoft Excel 2007+* dan *PDF
+document*; tanpa token 401; peran Staff 403; di emulator tombol PDF
+menghasilkan berkas di perangkat dan terbuka di penampil PDF dengan angka
+yang sama dengan layar.
+
+## 7. KPI pertumbuhan & tren nyata (FR-DSH-03) — ✅ 13 Nov 2026
+
+Sebelumnya **seluruh angka persentase perubahan di aplikasi dipatok di kode**
+(`pl: '14,3%'`, `delta: '8,2%'`, `tumbuh: 12.4`) dan backend tidak mengirim
+data pertumbuhan sama sekali. Badge hijau itu duduk di sebelah angka nyata,
+sehingga terbaca seolah sama sahihnya.
+
+Diperbaiki di `dashboard.service.ts`:
+- **Jendela periode nyata** menggantikan faktor skala karangan
+  (`daily = 1/30`, `yearly = 11.2`). Harian/Bulanan/Tahunan kini memfilter
+  `invoiceDate` betulan terhadap hari/bulan/tahun berjalan.
+- **`revenueGrowthPct`, `profitGrowthPct`, `costRatioPct`, `comparedTo`**
+  dihitung terhadap periode sebelumnya. Bila pembanding nol -> **`null`**,
+  dan aplikasi **menyembunyikan badge** alih-alih menampilkan "0%".
+- **Tren 6 bulan** dihitung per bulan dari `invoiceDate`; sebelumnya lima dari
+  enam bulannya angka tetap.
+
+**Konsekuensi yang harus dipahami:** data seed hanya terbentang Sep-Nov 2026
+dan menumpuk di Oktober, sehingga angka jujurnya terlihat tipis -
+November bermargin 100% (tidak ada biaya bertanggal November) dan empat bulan
+pertama di grafik bernilai 0. Itu keadaan sebenarnya, bukan bug perhitungan.
+**Lanjutan:** sebarkan data seed ke 6 bulan dengan biaya berpasangan tanggal.
+Menjalankan ulang seed menghapus isi basis data, jadi perlu persetujuan user.

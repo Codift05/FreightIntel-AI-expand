@@ -6,6 +6,7 @@ import { ShipmentsModule } from './shipments/shipments.module';
 import { FinanceModule } from './finance/finance.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { AnalyticsModule } from './analytics/analytics.module';
+import { ReportsModule } from './reports/reports.module';
 import { PrismaService } from './prisma/prisma.service';
 import { JwtAuthGuard } from './auth/jwt-auth.guard';
 import { PermissionsGuard } from './auth/permissions.guard';
@@ -39,6 +40,7 @@ export class HealthController {
     FinanceModule,
     DashboardModule,
     AnalyticsModule,
+    ReportsModule,
   ],
   controllers: [HealthController],
   // Guard global, dijalankan berurutan:

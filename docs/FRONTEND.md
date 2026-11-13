@@ -175,6 +175,28 @@ export PDF/Excel benar-benar menghasilkan file.
 - Insight tab icon changed star → `lamp_charge`. Finance localized to ID.
 
 ## Changelog
+- 2026-11-13 (y) — **Export laporan berfungsi + semua angka pertumbuhan palsu
+  dibuang.** Rincian backend di `docs/BACKEND.md` 6 & 7.
+  - Layar Laporan kini membaca `GET /reports`, jadi isinya **identik** dengan
+    berkas export. Sebelumnya layar memakai angka demo sementara berkas berisi
+    angka server - satu tombol, dua angka berbeda.
+  - Tombol PDF/Excel benar-benar mengunduh: `ApiClient.download()` (timeout 20
+    detik, bukan 1500 ms seperti permintaan JSON) -> simpan via
+    `path_provider` -> buka via `open_filex`. Paket baru: `path_provider`,
+    `open_filex`.
+  - **Angka pertumbuhan di seluruh aplikasi kini dari server.** Yang dibuang:
+    `pl: '14,3%'` di kartu hero, `delta: '8,2%' / '3,1%' / '4,0%'` di StatTile,
+    `tumbuh: 12.4 / 18.6 / 9.2` di Laporan. Bila server mengirim `null`,
+    **badge disembunyikan** - tidak ada lagi "0%" yang menyesatkan. Record
+    fallback offline juga dibersihkan dari angka pertumbuhan.
+  - Bug yang nyaris lolos: `_bulanan`/`_tahun` di Laporan dideklarasikan
+    `static const`, sehingga diisi data server akan **crash saat runtime**;
+    `flutter analyze` tidak menangkapnya. Diubah jadi list mutable.
+  - **Terverifikasi di emulator**: Dashboard `Rp 790 jt · 1,3% · margin 100,0%`
+    dan Pendapatan `79,3% vs bulan lalu` (merah, turun) - semua cocok dengan
+    `GET /dashboard`. Tombol PDF menghasilkan
+    `Laporan-FreightIntel-*.pdf` (2325 byte) yang terbuka di penampil PDF
+    perangkat dengan angka yang sama.
 - 2026-11-13 (x) — **RBAC ditegakkan di server (FR-USR-04)**. Rinciannya di
   `docs/BACKEND.md` 5.4. Dampak ke frontend: bila server membalas `403`,
   repository saat ini **diam-diam jatuh ke data contoh**. Dashboard sudah
