@@ -42,3 +42,6 @@ installer/*.ipa
 
 # Log sementara sesi debug (emulator, backend, build)
 .emulog/
+
+# Cadangan basis data (jangan masuk repo)
+backup/

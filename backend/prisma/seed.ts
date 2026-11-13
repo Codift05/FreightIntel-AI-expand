@@ -233,6 +233,14 @@ async function main() {
     const costJt = revJt - profJt;
     const shipmentNo = `FI-2610-${(1000 + i * 137).toString(16).toUpperCase().padStart(4, '0')}`;
 
+    // Sebar data ke 6 bulan terakhir supaya tren & pertumbuhan punya
+    // pembanding nyata. Sebelumnya semua bertanggal Oktober, sehingga grafik
+    // 6 bulan punya 5 bulan kosong dan margin bulan berjalan jadi 100%.
+    const bulanIdx = 5 + (i % 6); // 5=Jun ... 10=Nov (2026)
+    const BLN = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+    const tgl = (i % 24) + 1;
+    const kodeBulan = `26${String(bulanIdx + 1).padStart(2, '0')}`;
+
     const shp = await prisma.shipment.create({
       data: {
         companyId: cmp1.id,
@@ -242,8 +250,8 @@ async function main() {
         origin: r[0],
         destination: r[1],
         container: i % 2 === 0 ? '1 x 40ft HC' : '2 x 20ft GP',
-        etd: '12 Okt 2026',
-        eta: '28 Okt 2026',
+        etd: `${tgl} ${BLN[bulanIdx]} 2026`,
+        eta: `${Math.min(tgl + 16, 28)} ${BLN[bulanIdx]} 2026`,
         status: statuses[i % statuses.length],
         isArchived: false,
       },
@@ -259,9 +267,9 @@ async function main() {
         companyId: cmp1.id,
         shipmentId: shp.id,
         customerId: cust.id,
-        invoiceNo: `INV/2610/${String(100 + i).padStart(3, '0')}`,
+        invoiceNo: `INV/${kodeBulan}/${String(100 + i).padStart(3, '0')}`,
         category: modes[i % modes.length],
-        invoiceDate: new Date(2026, 9, (i % 25) + 1),
+        invoiceDate: new Date(2026, bulanIdx, tgl),
         currency: 'IDR',
         exchangeRate: dec(1),
         amount: revAmount,
@@ -280,6 +288,7 @@ async function main() {
           amount: revAmount,
           amountBase: revAmount,
           method: 'Transfer Bank Mandiri',
+          paidAt: new Date(2026, bulanIdx, Math.min(tgl + 5, 28)),
         },
       });
     } else if (i % 5 === 0) {
@@ -306,9 +315,9 @@ async function main() {
         companyId: cmp1.id,
         shipmentId: shp.id,
         vendorId: vend.id,
-        invoiceNo: `BILL/2610/${String(200 + i).padStart(3, '0')}`,
+        invoiceNo: `BILL/${kodeBulan}/${String(200 + i).padStart(3, '0')}`,
         category: vend.category,
-        invoiceDate: new Date(2026, 9, (i % 25) + 2),
+        invoiceDate: new Date(2026, bulanIdx, Math.min(tgl + 2, 28)),
         currency: 'IDR',
         exchangeRate: dec(1),
         amount: costAmount,
@@ -327,6 +336,7 @@ async function main() {
           amount: costAmount,
           amountBase: costAmount,
           method: 'Transfer Bank Mandiri',
+          paidAt: new Date(2026, bulanIdx, Math.min(tgl + 5, 28)),
         },
       });
     }

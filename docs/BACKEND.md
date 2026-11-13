@@ -216,5 +216,15 @@ Diperbaiki di `dashboard.service.ts`:
 dan menumpuk di Oktober, sehingga angka jujurnya terlihat tipis -
 November bermargin 100% (tidak ada biaya bertanggal November) dan empat bulan
 pertama di grafik bernilai 0. Itu keadaan sebenarnya, bukan bug perhitungan.
-**Lanjutan:** sebarkan data seed ke 6 bulan dengan biaya berpasangan tanggal.
-Menjalankan ulang seed menghapus isi basis data, jadi perlu persetujuan user.
+**✅ Diselesaikan 13 Nov 2026:** `prisma/seed.ts` kini menyebar tiap shipment
+ke 6 bulan terakhir (`bulanIdx = 5 + (i % 6)`, Jun-Nov 2026). Biaya bertanggal
+di bulan yang sama dengan pendapatannya (+2 hari), pembayaran +5 hari, dan
+nomor invoice/ETD/ETA mengikuti bulannya (`INV/2607/...`, bukan `INV/2610/...`
+untuk semua).
+
+Hasil: keenam bulan terisi pendapatan **dan** biaya, margin kembali wajar
+(50,4%, sebelumnya 100%), dan pertumbuhan punya pembanding nyata.
+
+**Sebelum seed dijalankan, basis data dicadangkan** ke `backup/*.sql`
+(`pg_dump`, 18 tabel). Folder `backup/` di-gitignore. Seed menghapus seluruh
+tabel, jadi selalu cadangkan dulu.

@@ -170,6 +170,12 @@ Penjelasan lengkap di `app/DESIGN.md`. Yang paling sering dilanggar agent:
   Kalau sebuah permintaan "hilang" dari log, curigai path-nya salah.
 - **Izin per-peran ditegakkan server** (`PermissionsGuard`, FR-USR-04). Rute
   baru yang menyentuh data modul harus diberi `@RequirePermission('MODUL_AKSI')`.
+- **`npm --prefix backend run prisma:seed` MENGHAPUS seluruh tabel.** Selalu
+  `docker exec freightintel-postgres pg_dump -U freightintel -d freightintel_db
+  > backup/<stempel>.sql` lebih dulu. Folder `backup/` di-gitignore.
+- **Menjalankan `npm --prefix backend test` menambah data** (invoice + 2
+  pembayaran per eksekusi), jadi angka dashboard bergeser setelah tiap uji.
+  Itu normal, bukan bug.
 - **Seluruh rute backend wajib token** sejak 13 Nov 2026 (`JwtAuthGuard` global
   via `APP_GUARD`). Rute baru otomatis ikut terlindungi; pakai `@Public()`
   hanya bila memang harus terbuka. **Konteks perusahaan diambil dari token**,
